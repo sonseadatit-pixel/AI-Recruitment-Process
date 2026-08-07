@@ -41,6 +41,25 @@ npm run dev
 
 Open the frontend URL printed by Vite (default `http://localhost:5173`).
 
+## Deploy to Render (live demo)
+
+This repo includes a `render.yaml` blueprint that deploys the whole app
+(Express API **and** the built React frontend) as a single free Node service,
+so there is no need for a separate frontend host or GitHub Pages.
+
+1. Create a free account at https://render.com (log in with GitHub).
+2. Click **New → Blueprint** and select the `AI-Recruitment-Process` repo.
+3. Render reads `render.yaml` and creates the service. It will ask for the
+   environment variables (`sync: false`) — fill them in with the same values
+   you use in your local `.env` files:
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+4. Click **Apply**. First deploy takes a few minutes, then the live URL is
+   `https://ai-recruitment-process.onrender.com` (or the name you choose).
+
+> Free-tier Render services sleep after ~15 minutes of inactivity and take a
+> few seconds to wake back up on the first visit.
+
 ## Workflow
 
 1. **Jobs** — post job openings with AI-generated descriptions.

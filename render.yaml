@@ -1,0 +1,26 @@
+# Render blueprint — deploys the full app (Express API + built React frontend)
+# as a single Node web service. See https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: ai-recruitment-process
+    runtime: node
+    plan: free
+    buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci
+    startCommand: node backend/server.js
+    healthCheckPath: /api/health
+    envVars:
+      # --- Backend (kept secret on Render) ---
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAUDE_MODEL
+        sync: false
+      # --- Frontend (baked into the build; anon key is public by design) ---
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
