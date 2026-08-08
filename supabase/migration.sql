@@ -37,3 +37,27 @@ ALTER TABLE candidates
   ADD COLUMN IF NOT EXISTS hire_notes text,
   ADD COLUMN IF NOT EXISTS decided_at timestamp,
   ADD COLUMN IF NOT EXISTS next_steps_completed jsonb DEFAULT '[]'::jsonb;
+
+-- Email-to-CV inbound pipeline (Mailgun webhook). Run this before using the
+-- POST /api/email-webhook endpoint, or the backend cannot persist email
+-- applications / notifications.
+CREATE TABLE IF NOT EXISTS email_applications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_email text NOT NULL,
+  sender_name text,
+  subject text,
+  resume_url text NOT NULL,
+  received_at timestamptz NOT NULL DEFAULT now(),
+  status text NOT NULL DEFAULT 'new_from_email'
+);
+
+-- Notification bell rows. Emailed CVs create a notification of type
+-- 'new_email_cv' pointing at the email_applications row via candidate_id.
+CREATE TABLE IF NOT EXISTS notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  type text NOT NULL,
+  message text NOT NULL,
+  candidate_id uuid,
+  is_read boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
