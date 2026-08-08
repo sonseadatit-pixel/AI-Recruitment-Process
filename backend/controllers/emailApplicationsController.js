@@ -12,6 +12,7 @@ function mapApplication(row) {
     sender_email: row.sender_email,
     sender_name: row.sender_name,
     subject: row.subject,
+    body: row.body ?? null,
     resume_url: row.resume_url,
     received_at: row.received_at,
     status: row.status,
@@ -37,6 +38,88 @@ export const getEmailApplications = async (req, res, next) => {
     }
 
     res.json((data || []).map(mapApplication));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/email-applications/:id/mark-read
+ * Marks a 'new' email application as 'read' (opening its detail view). Already
+ * read/submitted/rejected applications are left untouched.
+ */
+export const markEmailApplicationRead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!UUID_RE.test(id)) return res.status(404).json({ error: 'Email application not found' });
+
+    const { data: app, error: appError } = await supabase
+      .from('email_applications')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (appError) {
+      if (TABLE_MISSING_CODES.includes(appError.code)) {
+        return res.status(404).json({ error: 'Email application not found' });
+      }
+      return next(appError);
+    }
+    if (!app) return res.status(404).json({ error: 'Email application not found' });
+
+    if (app.status === 'submitted' || app.status === 'rejected') {
+      return res.json(mapApplication(app));
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from('email_applications')
+      .update({ status: 'read' })
+      .eq('id', id)
+      .select()
+      .single();
+    if (updateError) return next(updateError);
+
+    res.json(mapApplication(updated || { ...app, status: 'read' }));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/email-applications/:id/reject
+ * Marks a 'new'/'read' email application as 'rejected' so it leaves the active
+ * list. Applications already submitted to screening cannot be rejected.
+ */
+export const rejectEmailApplication = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!UUID_RE.test(id)) return res.status(404).json({ error: 'Email application not found' });
+
+    const { data: app, error: appError } = await supabase
+      .from('email_applications')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (appError) {
+      if (TABLE_MISSING_CODES.includes(appError.code)) {
+        return res.status(404).json({ error: 'Email application not found' });
+      }
+      return next(appError);
+    }
+    if (!app) return res.status(404).json({ error: 'Email application not found' });
+
+    if (app.status === 'submitted') {
+      return res.status(409).json({ error: 'Cannot reject an application already submitted to screening' });
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from('email_applications')
+      .update({ status: 'rejected' })
+      .eq('id', id)
+      .select()
+      .single();
+    if (updateError) return next(updateError);
+
+    res.json(mapApplication(updated || { ...app, status: 'rejected' }));
   } catch (error) {
     next(error);
   }

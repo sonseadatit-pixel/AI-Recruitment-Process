@@ -92,6 +92,8 @@ async function ensureBucket() {
  * resume attachment are ignored (no records created).
  */
 export const handleEmailWebhook = async (req, res) => {
+  console.log('MAILGUN WEBHOOK FIELDS:', Object.keys(req.body));
+  console.log('MAILGUN BODY VALUES:', JSON.stringify(req.body, null, 2));
   try {
     if (!verifyMailgunSignature(req.body)) {
       console.warn('[email-webhook] Dropping request with invalid Mailgun signature');
@@ -100,6 +102,7 @@ export const handleEmailWebhook = async (req, res) => {
 
     const sender = req.body?.sender || req.body?.From || req.body?.from || '';
     const subject = req.body?.subject || req.body?.Subject || '';
+    const body = req.body?.['body-plain'] || req.body?.['stripped-text'] || req.body?.body || '';
     const files = Array.isArray(req.files) ? req.files.filter(isResumeFile) : [];
 
     if (files.length === 0) {
@@ -128,9 +131,10 @@ export const handleEmailWebhook = async (req, res) => {
         sender_email: senderEmail,
         sender_name: senderName || nameFromFileName(file.originalname) || null,
         subject: subject || null,
+        body: body || null,
         resume_url: urlData.publicUrl,
         received_at: receivedAt,
-        status: 'new_from_email',
+        status: 'new',
       };
 
       const { data, error: insertError } = await supabase

@@ -499,6 +499,32 @@ export async function submitEmailApplicationToScreening(
   return res.json();
 }
 
+export async function markEmailApplicationRead(id: string): Promise<EmailApplication> {
+  const headers = await authHeaders();
+  const res = await fetch(`${BACKEND_URL}/email-applications/${encodeURIComponent(id)}/mark-read`, {
+    method: 'POST',
+    headers,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to mark as read (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function rejectEmailApplication(id: string): Promise<EmailApplication> {
+  const headers = await authHeaders();
+  const res = await fetch(`${BACKEND_URL}/email-applications/${encodeURIComponent(id)}/reject`, {
+    method: 'POST',
+    headers,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to reject (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 export async function fetchPipeline(): Promise<PipelineStage[]> {
   // TODO: aggregate pipeline counts from Supabase
   return [];

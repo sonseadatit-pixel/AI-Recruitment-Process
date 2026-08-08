@@ -101,6 +101,7 @@ export interface EmailApplication {
   sender_email: string;
   sender_name?: string;
   subject?: string;
+  body?: string | null;
   resume_url: string;
   received_at: string;
   status: string;

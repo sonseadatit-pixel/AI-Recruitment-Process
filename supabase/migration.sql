@@ -48,13 +48,23 @@ CREATE TABLE IF NOT EXISTS email_applications (
   subject text,
   resume_url text NOT NULL,
   received_at timestamptz NOT NULL DEFAULT now(),
-  status text NOT NULL DEFAULT 'new_from_email'
+  status text NOT NULL DEFAULT 'new'
 );
+
+-- Email body text captured from the Mailgun `body-plain` field so the detail
+-- view can show the full message.
+ALTER TABLE email_applications
+  ADD COLUMN IF NOT EXISTS body text;
 
 -- Links an email application to the candidate row created when it is submitted
 -- to screening (see POST /api/email-applications/:id/submit-to-screening).
 ALTER TABLE email_applications
   ADD COLUMN IF NOT EXISTS candidate_id uuid;
+
+-- Status lifecycle: 'new' -> 'read' -> 'submitted' | 'rejected'.
+-- Migrate rows created before the status model changed.
+UPDATE email_applications SET status = 'new' WHERE status = 'new_from_email';
+ALTER TABLE email_applications ALTER COLUMN status SET DEFAULT 'new';
 
 -- Notification bell rows. Emailed CVs create a notification of type
 -- 'new_email_cv' pointing at the email_applications row via candidate_id.
