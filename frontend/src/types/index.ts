@@ -87,6 +87,26 @@ export interface AppSettings {
   updatedAt?: string;
 }
 
+export interface NotificationItem {
+  id: string;
+  type: string;
+  message: string;
+  candidate_id?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface EmailApplication {
+  id: string;
+  sender_email: string;
+  sender_name?: string;
+  subject?: string;
+  resume_url: string;
+  received_at: string;
+  status: string;
+  candidate_id?: string;
+}
+
 export interface JobDescription {
   title: string;
   meta: string;

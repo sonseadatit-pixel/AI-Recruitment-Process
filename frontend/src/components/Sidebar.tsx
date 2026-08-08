@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import type { ComponentType, SVGProps } from 'react';
-import { GridIcon, BriefcaseIcon, UsersIcon, ScanIcon, ChatIcon, StarIcon, SettingsIcon, LogoutIcon } from './icons';
+import { GridIcon, BriefcaseIcon, UsersIcon, ScanIcon, ChatIcon, StarIcon, SettingsIcon, LogoutIcon, MailIcon } from './icons';
 import { useRecruitment } from '../context/RecruitmentContext';
 import { useAuth } from '../context/AuthContext';
 import logo from '../image/logo.png';
@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', path: '/', icon: GridIcon },
   { id: 'jobs', label: 'Jobs', path: '/jobs', icon: BriefcaseIcon },
   { id: 'candidates', label: 'Candidates', path: '/candidates', icon: UsersIcon },
+  { id: 'email-applications', label: 'Email Applications', path: '/email-applications', icon: MailIcon },
   { id: 'screening', label: 'Screening', path: '/screening', icon: ScanIcon },
   { id: 'interviews', label: 'Interviews', path: '/interviews', icon: ChatIcon },
   { id: 'recommendations', label: 'Recommendations', path: '/recommendations', icon: StarIcon },

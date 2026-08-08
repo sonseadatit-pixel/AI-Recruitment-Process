@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import type { Easing } from 'framer-motion';
 import logo from '../image/logo.png';
 
 interface WelcomeTransitionProps {
@@ -8,7 +9,7 @@ interface WelcomeTransitionProps {
 }
 
 const BOUNCE_Y = [0, -420, 0, -180, 0, -85, 0, -30, 0];
-const BOUNCE_EASE = ['easeIn', 'easeOut', 'easeIn', 'easeOut', 'easeIn', 'easeOut', 'easeIn', 'easeOut'];
+const BOUNCE_EASE: Easing[] = ['easeIn', 'easeOut', 'easeIn', 'easeOut', 'easeIn', 'easeOut', 'easeIn', 'easeOut'];
 
 export default function WelcomeTransition({ name = 'there', onComplete }: WelcomeTransitionProps) {
   const [dropped, setDropped] = useState(false);

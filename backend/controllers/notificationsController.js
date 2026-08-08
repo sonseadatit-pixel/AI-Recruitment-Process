@@ -1,6 +1,7 @@
 import { supabase } from '../services/claudeService.js';
 
 const TABLE_MISSING_CODES = ['PGRST205', '42P01', 'PGRST204'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function tableMissing(error) {
   return Boolean(error && TABLE_MISSING_CODES.includes(error.code));
@@ -37,6 +38,7 @@ export const getNotifications = async (req, res, next) => {
 export const markNotificationRead = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!UUID_RE.test(id)) return res.status(404).json({ error: 'Notification not found' });
 
     const { data, error } = await supabase
       .from('notifications')

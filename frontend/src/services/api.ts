@@ -4,7 +4,9 @@ import type {
   AppSettings,
   Candidate,
   DashboardStats,
+  EmailApplication,
   JobPosting,
+  NotificationItem,
   PipelineStage,
 } from '../types';
 
@@ -448,6 +450,53 @@ export async function saveDecision(
 export async function fetchDashboardStats(): Promise<DashboardStats | null> {
   // TODO: aggregate counts from Supabase (jobs, candidates, screening_results)
   return null;
+}
+
+export async function fetchNotifications(): Promise<NotificationItem[]> {
+  const headers = await authHeaders();
+  const res = await fetch(`${BACKEND_URL}/notifications`, { headers });
+  if (!res.ok) throw new Error(`Failed to load notifications (HTTP ${res.status})`);
+  return res.json();
+}
+
+export async function markNotificationRead(id: string): Promise<NotificationItem> {
+  const headers = await authHeaders();
+  const res = await fetch(`${BACKEND_URL}/notifications/${encodeURIComponent(id)}/read`, {
+    method: 'PUT',
+    headers,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to update notification (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchEmailApplications(): Promise<EmailApplication[]> {
+  const headers = await authHeaders();
+  const res = await fetch(`${BACKEND_URL}/email-applications`, { headers });
+  if (!res.ok) throw new Error(`Failed to load email applications (HTTP ${res.status})`);
+  return res.json();
+}
+
+export async function submitEmailApplicationToScreening(
+  id: string,
+  jobId: string
+): Promise<{ candidate: Candidate; application: EmailApplication }> {
+  const headers = { ...(await authHeaders()), 'Content-Type': 'application/json' };
+  const res = await fetch(
+    `${BACKEND_URL}/email-applications/${encodeURIComponent(id)}/submit-to-screening`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ jobId }),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to submit to screening (HTTP ${res.status})`);
+  }
+  return res.json();
 }
 
 export async function fetchPipeline(): Promise<PipelineStage[]> {

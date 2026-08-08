@@ -51,6 +51,11 @@ CREATE TABLE IF NOT EXISTS email_applications (
   status text NOT NULL DEFAULT 'new_from_email'
 );
 
+-- Links an email application to the candidate row created when it is submitted
+-- to screening (see POST /api/email-applications/:id/submit-to-screening).
+ALTER TABLE email_applications
+  ADD COLUMN IF NOT EXISTS candidate_id uuid;
+
 -- Notification bell rows. Emailed CVs create a notification of type
 -- 'new_email_cv' pointing at the email_applications row via candidate_id.
 CREATE TABLE IF NOT EXISTS notifications (

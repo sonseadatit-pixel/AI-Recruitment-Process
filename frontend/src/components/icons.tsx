@@ -96,6 +96,15 @@ export function BellIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function MailIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" {...base} {...props}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <polyline points="22,6 12,13 2,6" />
+    </svg>
+  );
+}
+
 export function BackIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" {...base} {...props}>

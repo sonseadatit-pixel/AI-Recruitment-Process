@@ -7,6 +7,7 @@ import Jobs from './pages/Jobs';
 import JobDetail from './pages/JobDetail';
 import JobEdit from './pages/JobEdit';
 import Candidates from './pages/Candidates';
+import EmailApplications from './pages/EmailApplications';
 import Screening from './pages/Screening';
 import Interviews from './pages/Interviews';
 import Recommendations from './pages/Recommendations';
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/jobs/:id" element={<JobDetail />} />
         <Route path="/jobs/:id/edit" element={<JobEdit />} />
         <Route path="/candidates" element={<Candidates />} />
+        <Route path="/email-applications" element={<EmailApplications />} />
         <Route path="/screening" element={<Screening />} />
         <Route path="/interviews" element={<Interviews />} />
         <Route path="/recommendations" element={<Recommendations />} />
