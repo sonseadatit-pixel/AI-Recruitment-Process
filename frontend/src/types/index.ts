@@ -34,6 +34,8 @@ export interface Candidate {
   hireNotes?: string;
   decidedAt?: string;
   nextSteps?: string[];
+  offerEmailSent?: boolean;
+  offerEmailSentAt?: string;
 }
 
 export interface JobPosting {
@@ -83,6 +85,8 @@ export interface AppSettings {
   emailNewApplication: boolean;
   emailScreeningComplete: boolean;
   fullName: string;
+  offerEmailSubject: string;
+  offerEmailTemplate: string;
   email?: string;
   updatedAt?: string;
 }

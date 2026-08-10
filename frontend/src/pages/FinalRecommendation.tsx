@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import ScoreRing from '../components/ScoreRing';
-import { BackIcon, InfoIcon, SparkIcon, XIcon } from '../components/icons';
+import { BackIcon, InfoIcon, MailIcon, SparkIcon, XIcon } from '../components/icons';
 import { useCurrentCandidate, useRecruitment } from '../context/RecruitmentContext';
-import { saveDecision } from '../services/api';
+import { saveDecision, sendOfferEmail } from '../services/api';
 import { formatDate } from '../utils/formatDate';
 
 type Decision = 'hire' | 'reject';
@@ -35,6 +35,9 @@ export default function FinalRecommendation() {
   const [nextSteps, setNextSteps] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [emailSuccess, setEmailSuccess] = useState('');
 
   useEffect(() => {
     loadCandidates();
@@ -145,6 +148,21 @@ export default function FinalRecommendation() {
       await saveDecision(candidate.id, { nextSteps: next });
     } catch {
       // best-effort: the checklist is still usable offline
+    }
+  };
+
+  const handleSendOfferEmail = async () => {
+    setEmailSending(true);
+    setEmailError('');
+    setEmailSuccess('');
+    try {
+      const result = await sendOfferEmail(candidate.id);
+      setEmailSuccess(`Offer email sent to ${result.to}.`);
+      await loadCandidates();
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Failed to send offer email.');
+    } finally {
+      setEmailSending(false);
     }
   };
 
@@ -323,6 +341,39 @@ export default function FinalRecommendation() {
                 <div className="bg-white rounded-lg p-3 border border-gray-100 mb-3">
                   <p className="text-xs font-medium text-gray-500 mb-1">Decision Notes</p>
                   <p className="text-xs text-gray-600 leading-relaxed">{hireNotes}</p>
+                </div>
+              )}
+
+              {decision === 'hire' && (
+                <div className="space-y-2">
+                  {candidate.offerEmailSent ? (
+                    <div className="flex items-center gap-2 bg-white rounded-lg p-3 border border-teal-200 text-xs font-medium text-teal-700">
+                      <span>✓ Offer email sent</span>
+                      {candidate.offerEmailSentAt && (
+                        <span className="text-teal-500 font-normal">· {formatDate(candidate.offerEmailSentAt)}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleSendOfferEmail}
+                      disabled={emailSending}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#1E3A5F] hover:opacity-90 transition disabled:opacity-50"
+                    >
+                      {emailSending ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                          Sending…
+                        </>
+                      ) : (
+                        <>
+                          <MailIcon width={14} height={14} stroke="#fff" />
+                          Send Offer Email
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {emailSuccess && <p className="text-xs text-teal-600 font-medium">{emailSuccess}</p>}
+                  {emailError && <p className="text-xs text-red-500">{emailError}</p>}
                 </div>
               )}
 

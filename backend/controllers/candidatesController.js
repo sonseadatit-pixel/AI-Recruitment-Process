@@ -5,6 +5,8 @@ import {
   generateInterviewSummary,
   isClaudeConfigured,
 } from '../services/claudeService.js';
+import { sendMail } from '../services/mailgunService.js';
+import { getSettingsForUser } from './settingsController.js';
 
 const RESUMES_BUCKET = 'resumes';
 
@@ -191,6 +193,8 @@ export const saveDecision = async (req, res, next) => {
       patch.hire_notes = null;
       patch.decided_at = null;
       patch.next_steps_completed = [];
+      patch.offer_email_sent = false;
+      patch.offer_email_sent_at = null;
     }
 
     if (Array.isArray(nextSteps)) {
@@ -233,6 +237,115 @@ function storagePathFromUrl(url) {
   const path = url.slice(index + marker.length);
   return path || null;
 }
+
+function fillTemplate(template, values) {
+  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => {
+    const value = values[key];
+    return value !== undefined && value !== null ? String(value) : match;
+  });
+}
+
+function formatStartDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+/**
+ * POST /api/candidates/:id/send-offer-email
+ * Sends a brand-new offer email (Mailgun) to the candidate's address — the one
+ * that applied by email (candidates.email, falling back to the linked
+ * email_applications.sender_email). The subject/body come from the sender's
+ * settings template with {{candidate_name}}, {{job_title}}, {{hr_notes}},
+ * {{start_date}} and {{sender_name}} filled in. Only works for hired candidates
+ * and refuses to send twice (offer_email_sent).
+ */
+export const sendOfferEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { id: userId } = req.user;
+
+    const { data: candidate, error: fetchError } = await supabase
+      .from('candidates')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (fetchError) return next(fetchError);
+    if (!candidate) return res.status(404).json({ error: 'Candidate not found' });
+
+    if (candidate.status !== 'hired') {
+      return res.status(400).json({ error: 'Offer email can only be sent to hired candidates.' });
+    }
+    if (candidate.offer_email_sent) {
+      return res.status(409).json({ error: 'Offer email has already been sent for this candidate.' });
+    }
+
+    let email = typeof candidate.email === 'string' ? candidate.email.trim() : '';
+    if (!email && candidate.id) {
+      const { data: app, error: appError } = await supabase
+        .from('email_applications')
+        .select('sender_email')
+        .eq('candidate_id', candidate.id)
+        .maybeSingle();
+      if (appError) return next(appError);
+      if (app?.sender_email) email = String(app.sender_email).trim();
+    }
+    if (!email) {
+      return res
+        .status(400)
+        .json({ error: 'No email address on file for this candidate (they did not apply by email).' });
+    }
+
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('title')
+      .eq('id', candidate.job_id)
+      .maybeSingle();
+    if (jobError && jobError.code !== 'PGRST116') return next(jobError);
+
+    const settings = await getSettingsForUser(userId);
+    const values = {
+      candidate_name: candidate.name || 'Candidate',
+      job_title: job?.title || candidate.role || '',
+      hr_notes: candidate.hire_notes || '',
+      start_date: formatStartDate(candidate.hire_start_date),
+      sender_name: settings.full_name || 'HR Team',
+    };
+
+    const subject = fillTemplate(settings.offer_email_subject || '', values);
+    const text = fillTemplate(settings.offer_email_template || '', values);
+
+    const messageId = await sendMail({
+      to: email,
+      subject,
+      text,
+      senderName: values.sender_name,
+    });
+
+    const sentAt = new Date().toISOString();
+    const { data: updated, error: updateError } = await supabase
+      .from('candidates')
+      .update({ offer_email_sent: true, offer_email_sent_at: sentAt })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.warn('[send-offer-email] Email sent but failed to mark candidate:', updateError.message);
+    }
+
+    res.json({
+      success: true,
+      message_id: messageId,
+      to: email,
+      sent_at: sentAt,
+      candidate: updated ?? { ...candidate, offer_email_sent: true, offer_email_sent_at: sentAt },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 /**
  * POST /api/candidates/:id/interview-questions

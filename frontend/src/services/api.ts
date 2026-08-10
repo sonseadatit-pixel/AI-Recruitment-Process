@@ -217,6 +217,8 @@ function mapCandidate(row: Record<string, unknown>): Candidate {
     hireNotes: typeof row.hire_notes === 'string' && row.hire_notes ? row.hire_notes : undefined,
     decidedAt: typeof row.decided_at === 'string' ? row.decided_at : undefined,
     nextSteps: Array.isArray(row.next_steps_completed) ? (row.next_steps_completed as string[]) : [],
+    offerEmailSent: Boolean(row.offer_email_sent),
+    offerEmailSentAt: typeof row.offer_email_sent_at === 'string' ? row.offer_email_sent_at : undefined,
     screened: Boolean(row.screened ?? (row.ai_score != null)),
     interviewScore: row.interview_score != null ? Number(row.interview_score) : undefined,
     interviewFeedback:
@@ -260,6 +262,8 @@ function mapScreeningResult(row: Record<string, unknown>, threshold: number = AI
     hireNotes: typeof row.hire_notes === 'string' && row.hire_notes ? row.hire_notes : undefined,
     decidedAt: typeof row.decided_at === 'string' ? row.decided_at : undefined,
     nextSteps: Array.isArray(row.next_steps_completed) ? (row.next_steps_completed as string[]) : [],
+    offerEmailSent: Boolean(row.offer_email_sent),
+    offerEmailSentAt: typeof row.offer_email_sent_at === 'string' ? row.offer_email_sent_at : undefined,
     screened: true,
     interviewScore: row.interview_score != null ? Number(row.interview_score) : undefined,
     interviewFeedback:
@@ -277,6 +281,14 @@ function mapSettingsRow(row: Record<string, unknown>): AppSettings {
     emailNewApplication: row.email_new_application !== false,
     emailScreeningComplete: row.email_screening_complete !== false,
     fullName: typeof row.full_name === 'string' ? row.full_name : '',
+    offerEmailSubject:
+      typeof row.offer_email_subject === 'string' && row.offer_email_subject.trim()
+        ? row.offer_email_subject
+        : 'Congratulations — {{job_title}} Offer',
+    offerEmailTemplate:
+      typeof row.offer_email_template === 'string' && row.offer_email_template.trim()
+        ? row.offer_email_template
+        : '',
     email: typeof row.email === 'string' ? row.email : undefined,
     updatedAt: typeof row.updated_at === 'string' ? row.updated_at : undefined,
   };
@@ -297,6 +309,8 @@ export async function saveSettings(input: {
   emailNewApplication: boolean;
   emailScreeningComplete: boolean;
   fullName: string;
+  offerEmailSubject: string;
+  offerEmailTemplate: string;
 }): Promise<void> {
   const res = await fetch(`${BACKEND_URL}/settings`, {
     method: 'PUT',
@@ -307,6 +321,8 @@ export async function saveSettings(input: {
       email_new_application: input.emailNewApplication,
       email_screening_complete: input.emailScreeningComplete,
       full_name: input.fullName,
+      offer_email_subject: input.offerEmailSubject,
+      offer_email_template: input.offerEmailTemplate,
     }),
   });
   if (!res.ok) {
@@ -445,6 +461,21 @@ export async function saveDecision(
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Failed to save decision (HTTP ${res.status})`);
   }
+}
+
+export async function sendOfferEmail(
+  candidateId: string
+): Promise<{ message_id: string; to: string; sent_at: string }> {
+  const headers = { ...(await authHeaders()), 'Content-Type': 'application/json' };
+  const res = await fetch(
+    `${BACKEND_URL}/candidates/${encodeURIComponent(candidateId)}/send-offer-email`,
+    { method: 'POST', headers }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to send offer email (HTTP ${res.status})`);
+  }
+  return res.json();
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats | null> {

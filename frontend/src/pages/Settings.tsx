@@ -14,6 +14,8 @@ export default function Settings() {
   const [emailNewApplication, setEmailNewApplication] = useState(true);
   const [emailScreeningComplete, setEmailScreeningComplete] = useState(true);
   const [fullName, setFullName] = useState('');
+  const [offerEmailSubject, setOfferEmailSubject] = useState('Congratulations — {{job_title}} Offer');
+  const [offerEmailTemplate, setOfferEmailTemplate] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,6 +34,8 @@ export default function Settings() {
         setEmailNewApplication(settings.emailNewApplication);
         setEmailScreeningComplete(settings.emailScreeningComplete);
         setFullName(settings.fullName || (user?.user_metadata?.full_name as string) || '');
+        setOfferEmailSubject(settings.offerEmailSubject || 'Congratulations — {{job_title}} Offer');
+        setOfferEmailTemplate(settings.offerEmailTemplate || '');
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load settings.');
@@ -67,6 +71,8 @@ export default function Settings() {
         emailNewApplication,
         emailScreeningComplete,
         fullName,
+        offerEmailSubject,
+        offerEmailTemplate,
       });
       await supabase.auth.updateUser({ data: { full_name: fullName } });
       await refreshSettings();
@@ -150,6 +156,39 @@ export default function Settings() {
             >
               <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${emailScreeningComplete ? 'translate-x-4' : ''}`}></div>
             </button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Offer Email */}
+      <Card className="p-6">
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">Offer Email</h3>
+        <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+          Used by the "Send Offer Email" button on the Final Recommendation page for hired candidates.
+          Placeholders: <code className="text-teal-600">{'{{candidate_name}}'}</code>,{' '}
+          <code className="text-teal-600">{'{{job_title}}'}</code>, <code className="text-teal-600">{'{{hr_notes}}'}</code>,{' '}
+          <code className="text-teal-600">{'{{start_date}}'}</code>, <code className="text-teal-600">{'{{sender_name}}'}</code>
+        </p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <label className="text-sm text-gray-600 flex-1">Subject</label>
+            <input
+              type="text"
+              value={offerEmailSubject}
+              onChange={(e) => setOfferEmailSubject(e.target.value)}
+              disabled={loading}
+              className="text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 w-96 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1.5">Email text</label>
+            <textarea
+              value={offerEmailTemplate}
+              onChange={(e) => setOfferEmailTemplate(e.target.value)}
+              disabled={loading}
+              rows={10}
+              className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 resize-y focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition leading-relaxed"
+            />
           </div>
         </div>
       </Card>

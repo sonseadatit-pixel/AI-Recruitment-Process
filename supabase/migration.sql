@@ -76,3 +76,27 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_read boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Offer email sending (Send Offer Email button on the Final Recommendation page).
+-- `candidates` tracks whether the offer email was already sent so HR cannot
+-- accidentally double-send; `settings` stores the editable subject/template used
+-- to generate the message (placeholders: {{candidate_name}}, {{job_title}},
+-- {{hr_notes}}, {{start_date}}, {{sender_name}}).
+ALTER TABLE candidates
+  ADD COLUMN IF NOT EXISTS offer_email_sent boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS offer_email_sent_at timestamptz;
+
+ALTER TABLE settings
+  ADD COLUMN IF NOT EXISTS offer_email_subject text NOT NULL DEFAULT 'Congratulations — {{job_title}} Offer',
+  ADD COLUMN IF NOT EXISTS offer_email_template text NOT NULL DEFAULT $$Dear {{candidate_name}},
+
+Congratulations! We are pleased to inform you that you have been selected for the {{job_title}} position at our company.
+
+{{hr_notes}}
+
+Your expected start date: {{start_date}}
+
+We look forward to welcoming you to the team!
+
+Best regards,
+{{sender_name}}$$;

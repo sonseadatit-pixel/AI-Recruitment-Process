@@ -6,6 +6,21 @@ const DEFAULT_SETTINGS = {
   email_new_application: true,
   email_screening_complete: true,
   full_name: '',
+  offer_email_subject: 'Congratulations — {{job_title}} Offer',
+  offer_email_template: [
+    'Dear {{candidate_name}},',
+    '',
+    'Congratulations! We are pleased to inform you that you have been selected for the {{job_title}} position at our company.',
+    '',
+    '{{hr_notes}}',
+    '',
+    'Your expected start date: {{start_date}}',
+    '',
+    'We look forward to welcoming you to the team!',
+    '',
+    'Best regards,',
+    '{{sender_name}}',
+  ].join('\n'),
 };
 
 // PostgREST/Postgres codes raised when the `settings` table has not been
@@ -24,6 +39,14 @@ function mapRow(row) {
     email_new_application: row ? Boolean(row.email_new_application) : true,
     email_screening_complete: row ? Boolean(row.email_screening_complete) : true,
     full_name: typeof row?.full_name === 'string' ? row.full_name : '',
+    offer_email_subject:
+      typeof row?.offer_email_subject === 'string' && row.offer_email_subject.trim()
+        ? row.offer_email_subject
+        : DEFAULT_SETTINGS.offer_email_subject,
+    offer_email_template:
+      typeof row?.offer_email_template === 'string' && row.offer_email_template.trim()
+        ? row.offer_email_template
+        : DEFAULT_SETTINGS.offer_email_template,
     updated_at: row?.updated_at ?? null,
   };
 }
@@ -118,6 +141,14 @@ export const updateSettings = async (req, res, next) => {
       email_new_application: body.email_new_application !== undefined ? Boolean(body.email_new_application) : true,
       email_screening_complete: body.email_screening_complete !== undefined ? Boolean(body.email_screening_complete) : true,
       full_name: typeof body.full_name === 'string' ? body.full_name.trim() : '',
+      offer_email_subject:
+        typeof body.offer_email_subject === 'string' && body.offer_email_subject.trim()
+          ? body.offer_email_subject.trim()
+          : DEFAULT_SETTINGS.offer_email_subject,
+      offer_email_template:
+        typeof body.offer_email_template === 'string' && body.offer_email_template.trim()
+          ? body.offer_email_template
+          : DEFAULT_SETTINGS.offer_email_template,
       updated_at: new Date().toISOString(),
     };
 
