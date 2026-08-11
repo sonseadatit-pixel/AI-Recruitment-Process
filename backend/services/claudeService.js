@@ -65,9 +65,9 @@ function buildScreeningPrompt(resumeText, jobDescription, jobRequirements, weigh
     ? `\n=== WEIGHTED SKILLS ===\nThese skills should be weighted more heavily in scoring: ${weightedSkills.trim()}`
     : '';
 
-  return `You are an expert HR recruitment assistant. Your task is to screen a candidate's resume against a job posting and evaluate how well the candidate fits.
+  return `You are an expert HR recruitment assistant supporting an HR team. Your job is to screen a candidate's resume against a job posting and report the evidence you find. You are a tool that assists HR — you never hire, reject, or shortlist candidates yourself. HR reviews your output and makes the final decision.
 
-Compare the candidate's resume to the job description and requirements below, considering skills, relevant experience, education, certifications, and any red flags or inconsistencies.
+Compare the candidate's resume to the job description and requirements below, considering only evidence actually present in the resume: relevant skills, experience, education, certifications, and any red flags or inconsistencies.
 
 Return ONLY valid JSON with no commentary, no markdown, in this exact shape:
 {
@@ -77,11 +77,21 @@ Return ONLY valid JSON with no commentary, no markdown, in this exact shape:
   "summary": "<2-3 sentence summary of fit>"
 }
 
+Scoring guidance — score how well the resume demonstrates the job's requirements:
+- 90-100: Excellent fit. The resume directly demonstrates almost all key requirements and relevant experience.
+- 75-89: Strong fit. The resume demonstrates most key requirements, with a few minor gaps.
+- 50-74: Moderate fit. Some key requirements are met, but notable gaps exist.
+- 25-49: Weak fit. The resume meets few key requirements.
+- 0-24: Poor fit. The resume does not demonstrate the job's key requirements.
+Base the score ONLY on job-related evidence in the resume. A shorter or less polished resume should NOT be penalized beyond the actual gaps in the evidence.
+
 Rules:
-- "score" must be an integer between 0 and 100 reflecting overall fit.
-- "matched_skills" must be an array of skill names explicitly present in the resume that are relevant to the job.
+- "score" must be an integer between 0 and 100 reflecting overall fit based on the evidence.
+- "matched_skills" must be an array of skill names explicitly present in the resume that are relevant to the job. Never invent or infer skills that are not stated.
 - "missing_skills" must be an array of skills the job requires that the resume does not demonstrate.
-- "summary" must be a concise 2-3 sentence assessment.
+- "summary" must be a concise 2-3 sentence assessment of the evidence found. Describe what the resume does and does not demonstrate. Do NOT recommend hiring, shortlisting, or rejection — HR decides.
+- NEVER consider, mention, or infer protected characteristics such as age, gender, race, ethnicity, religion, marital status, disability, or national origin. These must never affect the score or the summary.
+- If the resume provides no relevant evidence, score honestly low and say so.
 ${weighted}
 === JOB DESCRIPTION ===
 ${jobDescription || '(not provided)'}
@@ -105,7 +115,12 @@ function parseScreeningJson(text) {
     cleaned = cleaned.slice(braceStart, braceEnd + 1);
   }
 
-  const parsed = JSON.parse(cleaned);
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (error) {
+    throw new Error(`Claude returned invalid JSON for resume screening: ${error.message}`);
+  }
 
   const score = Number(parsed.score);
   return {
@@ -168,7 +183,8 @@ What We're Looking For
 
 Rules:
 - Tone must be professional but approachable: energetic, inclusive, and human. Avoid corporate jargon and fluff.
-- Derive responsibilities and qualifications from the given details only. Do NOT invent company facts, benefits, perks, or a company name.
+- Derive responsibilities and qualifications from the given details only. Never invent company facts, benefits, perks, salaries, company name, culture claims, or specific tools or technologies not listed in the key requirements.
+- Cover every key requirement exactly once in the "What We're Looking For" section. Do not repeat requirements in the Overview, "What You'll Do", or across bullets.
 - Keep the whole description tight and skimmable.
 
 === JOB DETAILS ===
@@ -220,12 +236,12 @@ function buildInterviewQuestionsPrompt(candidateName, resumeText, jobTitle, jobR
     ? `\n=== ADDITIONAL INSTRUCTIONS FROM HR ===\n${customInstructions}`
     : '';
 
-  return `You are an expert technical interviewer preparing a question set for an upcoming interview. Your questions must be tailored to this specific candidate and role.
+  return `You are an expert technical interviewer supporting an HR team. Your job is to prepare a question set that helps HR gather additional evidence about a specific candidate during an upcoming interview. You assist HR — you do not decide whether the candidate is hired or rejected.
 
 Generate a question set that:
-- Probes the candidate's matched skills with scenario and trade-off questions.
-- Explores how the candidate would approach or ramp up on their missing skill areas.
-- Covers the job's core requirements from the job description.
+- Probes the candidate's matched skills with scenario and trade-off questions, to verify the depth of skills already shown on the resume.
+- Explores how the candidate would approach or ramp up on their missing skill areas, to gauge aptitude and learning approach.
+- Covers the job's core requirements from the job description, phrased so they can be answered by this candidate.
 - Behavioral questions should explore teamwork, communication, ownership, handling conflict, and growth, tied to the candidate's background where possible.
 
 Return ONLY valid JSON with no commentary, no markdown, in this exact shape:
@@ -237,6 +253,10 @@ Return ONLY valid JSON with no commentary, no markdown, in this exact shape:
 Rules:
 - Exactly 4 technical and exactly 4 behavioral questions.
 - Each question must be 1-2 concise sentences, focused on ONE clear skill or scenario.
+- Questions must be evidence-gathering: they help HR confirm or clarify what is already in the resume and explore gaps. Do not ask yes/no questions or questions already answerable from the resume.
+- Base every question on the candidate, job, matched skills, and missing skills provided below. Never assume skills, experience, or background that are not present in the provided information.
+- Do not ask about protected characteristics (age, gender, race, religion, marital status, disability, national origin) or anything not relevant to job performance.
+- Ensure the 8 questions are distinct. Do not duplicate or rephrase the same question.
 - Write in plain, standard interview language, like a real HR interviewer would ask. Avoid heavy technical jargon and avoid overly specific references to minor project details from the resume.
 - Questions must be open-ended and interview-ready.
 
@@ -271,7 +291,12 @@ function parseInterviewQuestionsJson(text) {
     cleaned = cleaned.slice(braceStart, braceEnd + 1);
   }
 
-  const parsed = JSON.parse(cleaned);
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (error) {
+    throw new Error(`Claude returned invalid JSON for interview questions: ${error.message}`);
+  }
 
   const cleanList = (value) => (Array.isArray(value) ? value.map(String).filter(Boolean) : []);
 
@@ -307,14 +332,15 @@ export async function generateInterviewSummary(candidateName, jobTitle, resumeSc
 }
 
 function buildInterviewSummaryPrompt(candidateName, jobTitle, resumeScore, interviewFeedback, interviewScore, recommendation) {
-  return `You are an expert HR assistant. Condense raw interviewer notes into a clear, professional summary for the candidate's hiring record.
+  return `You are an expert HR assistant supporting an HR team. Condense raw interviewer notes into a clear, professional summary for the candidate's hiring record. You summarize evidence and assist HR — you never make or create a hiring decision or recommendation yourself.
 
-Write a concise summary of 2-4 sentences that highlights the candidate's key strengths, any concerns, and the overall impression. Use professional HR documentation style.
+Write a concise summary of 2-4 sentences that highlights the candidate's key strengths, any concerns, and the overall impression, based only on the raw interviewer notes.
 
 Rules:
 - Do NOT invent facts that are not present in the raw interviewer notes.
+- Do NOT create, change, or suggest a new recommendation, score, or decision. Only reflect the interview score and recommendation exactly as provided, and only in natural, neutral terms tied to the notes.
 - Do NOT use markdown headers, bullet lists, or JSON — return plain prose only.
-- Mention the interview score and recommendation only in natural, neutral terms tied to the notes.
+- If the raw notes are missing or empty, say the notes were unavailable rather than inventing content.
 
 === CANDIDATE ===
 Name: ${candidateName || '(not provided)'}
