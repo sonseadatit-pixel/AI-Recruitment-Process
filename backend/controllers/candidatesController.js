@@ -132,8 +132,26 @@ export const deleteCandidate = async (req, res, next) => {
     if (fetchError) return next(fetchError);
     if (!candidate) return res.status(404).json({ error: 'Candidate not found' });
 
+    // If this candidate was created from an emailed CV, reset the email
+    // application back to 'read' (and clear its candidate link) so it can be
+    // submitted to screening again. The resume file is kept so it still works
+    // after re-submission.
+    const { data: linkedApp } = await supabase
+      .from('email_applications')
+      .select('id')
+      .eq('candidate_id', id)
+      .maybeSingle();
+
     const { error: deleteError } = await supabase.from('candidates').delete().eq('id', id);
     if (deleteError) return next(deleteError);
+
+    if (linkedApp) {
+      await supabase
+        .from('email_applications')
+        .update({ status: 'read', candidate_id: null })
+        .eq('id', linkedApp.id);
+      return res.json({ success: true, id });
+    }
 
     const storagePath = storagePathFromUrl(candidate.resume_url);
     if (storagePath) {

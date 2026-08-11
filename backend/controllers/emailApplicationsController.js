@@ -129,7 +129,7 @@ export const rejectEmailApplication = async (req, res, next) => {
  * POST /api/email-applications/:id/submit-to-screening
  * Creates a proper `candidates` row from an emailed CV (linked to the chosen
  * job, status 'new') so it flows into the normal screening pipeline, and marks
- * the email application as submitted.
+ * the email application as submitted. The job posting must be selected by HR.
  */
 export const submitEmailApplicationToScreening = async (req, res, next) => {
   try {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import { EyeIcon, MailIcon, UploadIcon, XIcon } from '../components/icons';
 import {
@@ -9,7 +9,7 @@ import {
   rejectEmailApplication,
   submitEmailApplicationToScreening,
 } from '../services/api';
-import { formatDate } from '../utils/formatDate';
+import { formatDateTime } from '../utils/formatDate';
 import type { EmailApplication, JobPosting } from '../types';
 
 const FOCUS_HIGHLIGHT_MS = 4000;
@@ -34,6 +34,7 @@ const statusBadge: Record<string, string> = {
 const normStatus = (status: string) => (status === 'new_from_email' ? 'new' : status);
 
 export default function EmailApplications() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [applications, setApplications] = useState<EmailApplication[]>([]);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
@@ -119,9 +120,9 @@ export default function EmailApplications() {
       const result = await submitEmailApplicationToScreening(app.id, jobId);
       applyUpdate(result.application);
       const job = jobs.find((j) => j.id === jobId);
-      setMessage(
-        `${result.application.sender_name || result.application.sender_email} submitted to "${job?.title ?? ''}" and is ready for AI screening.`
-      );
+      const name = result.application.sender_name || result.application.sender_email;
+      setMessage(`${name} added to "${job?.title ?? ''}" and is ready for AI screening.`);
+      navigate('/candidates');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit to screening.');
     } finally {
@@ -291,7 +292,7 @@ export default function EmailApplications() {
             </div>
             <div>
               <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Received</p>
-              <p className="text-xs text-gray-600">{formatDate(app.received_at) || '—'}</p>
+              <p className="text-xs text-gray-600">{formatDateTime(app.received_at) || '—'}</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Message</p>
@@ -426,7 +427,7 @@ export default function EmailApplications() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right text-xs text-gray-400 whitespace-nowrap">
-                    {formatDate(app.received_at)}
+                    {formatDateTime(app.received_at)}
                   </td>
                   <td className="px-6 py-4">
                     <ActionCell app={app} />

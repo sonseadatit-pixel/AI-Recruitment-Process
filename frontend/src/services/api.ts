@@ -160,7 +160,13 @@ export async function fetchScreeningResults(
 
 export async function runScreening(
   jobId: string
-): Promise<{ job_id: string; total: number; succeeded: number; failed: number }> {
+): Promise<{
+  job_id: string;
+  total: number;
+  succeeded: number;
+  failed: number;
+  failures?: { candidateId: string; name: string; error: string }[];
+}> {
   const headers = { 'Content-Type': 'application/json', ...(await authHeaders()) };
   const res = await fetch(`${BACKEND_URL}/screening/run`, {
     method: 'POST',

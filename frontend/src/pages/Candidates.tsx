@@ -27,6 +27,12 @@ export default function Candidates() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (jobId) return;
+    const firstPending = candidates.find((c) => !c.screened && c.jobId);
+    if (firstPending?.jobId) setJobId(firstPending.jobId);
+  }, [candidates, jobId]);
+
   const upload = async (files: File[]) => {
     if (!jobId) {
       setError('Select a job posting before uploading.');
@@ -70,7 +76,7 @@ export default function Candidates() {
       return;
     }
     if (pendingCandidates.length === 0) {
-      setError('Upload at least one new resume before running screening.');
+      setError('No unscreened candidates for this job. Upload resumes or select the correct job posting.');
       return;
     }
     setError('');
@@ -81,8 +87,17 @@ export default function Candidates() {
       setScreeningMessage(
         `Screening complete: ${result.succeeded} of ${result.total} candidate${result.total === 1 ? '' : 's'} analyzed.`
       );
+      if (result.failed > 0 && result.failures?.length) {
+        const names = result.failures.map((f) => f.name || 'Candidate').join(', ');
+        const firstError = result.failures[0]?.error;
+        setError(
+          `Screening failed for ${result.failed} candidate${result.failed === 1 ? '' : 's'}: ${names}${firstError ? ` — ${firstError}` : ''}`
+        );
+      }
       fetchCandidates().then(setCandidates).catch(console.error);
-      setTimeout(() => navigate('/screening'), 1500);
+      if (result.succeeded > 0) {
+        setTimeout(() => navigate('/screening'), 1500);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Screening failed.');
     } finally {
@@ -90,8 +105,8 @@ export default function Candidates() {
     }
   };
 
-  const pendingCandidates = candidates.filter((c) => !c.screened);
-  const screenedCandidates = candidates.filter((c) => c.screened);
+  const pendingCandidates = candidates.filter((c) => !c.screened && (!jobId || c.jobId === jobId));
+  const screenedCandidates = candidates.filter((c) => c.screened && (!jobId || c.jobId === jobId));
 
   return (
     <div className="p-8 space-y-5">
@@ -163,7 +178,9 @@ export default function Candidates() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-800 truncate">{c.name}</p>
-                      <p className="text-xs text-gray-400">Uploaded {formatDate(c.appliedDate) || '—'}</p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {(jobs.find((j) => j.id === c.jobId)?.title ?? c.role) || 'Resume'} · Uploaded {formatDate(c.appliedDate) || '—'}
+                      </p>
                     </div>
                     {c.resume_url && (
                       <a
@@ -188,7 +205,9 @@ export default function Candidates() {
                 ))
               ) : (
                 <div className="px-5 py-8 text-center text-sm text-gray-400">
-                  No new CVs uploaded yet. Drop resume files above.
+                  {jobId
+                    ? 'No unscreened candidates for the selected job. Drop resume files above or switch the job.'
+                    : 'No new CVs uploaded yet. Drop resume files above.'}
                 </div>
               )}
             </div>
