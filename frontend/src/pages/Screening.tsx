@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import { InfoIcon, SparkIcon } from '../components/icons';
 import { useRecruitment } from '../context/RecruitmentContext';
+import { saveDecision } from '../services/api';
 
 const filterOptions = ['all', 'ai-suggested', 'shortlisted', 'pending', 'rejected'];
 
@@ -41,8 +42,17 @@ export default function Screening() {
   }, [candidates, filter, jobFilter, sortKey]);
 
   const confirm = (id: string) => {
-    // TODO: persist status change to Supabase (e.g. screening_results / decisions)
+    // TODO: persist shortlist status change to Supabase (needs a backend endpoint)
     updateCandidateStatus(id, 'shortlisted');
+  };
+
+  const rejectCandidate = async (id: string) => {
+    try {
+      await saveDecision(id, { decision: 'reject' });
+      updateCandidateStatus(id, 'rejected');
+    } catch (err) {
+      console.error('Failed to reject candidate:', err);
+    }
   };
 
   return (
@@ -120,7 +130,6 @@ export default function Screening() {
                   </div>
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Matched Skills</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Action</th>
             </tr>
@@ -172,14 +181,6 @@ export default function Screening() {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {c.matchedSkills.slice(0, 3).map((s) => (
-                      <span key={s} className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md ring-1 ring-teal-200">{s}</span>
-                    ))}
-                    {c.matchedSkills.length > 3 && <span className="text-xs text-gray-400">+{c.matchedSkills.length - 3}</span>}
-                  </div>
-                </td>
                 <td className="px-6 py-4"><StatusBadge status={c.status} /></td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
@@ -190,8 +191,18 @@ export default function Screening() {
                       }}
                       className="text-xs px-3 py-1.5 bg-[#1E3A5F] text-white rounded-lg hover:opacity-90 transition font-medium"
                     >
-                      View
+                      View Detail
                     </button>
+                    {c.resume_url && (
+                      <a
+                        href={c.resume_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs px-3 py-1.5 bg-white text-teal-600 rounded-lg hover:bg-teal-50 transition font-medium ring-1 ring-teal-200"
+                      >
+                        View CV
+                      </a>
+                    )}
                     {c.status === 'ai-suggested' && (
                       <button
                         onClick={() => confirm(c.id)}
@@ -218,7 +229,7 @@ export default function Screening() {
                     )}
                     {(c.status === 'ai-suggested' || c.status === 'pending' || c.status === 'shortlisted') && (
                       <button
-                        onClick={() => updateCandidateStatus(c.id, 'rejected')}
+                        onClick={() => rejectCandidate(c.id)}
                         className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition font-medium ring-1 ring-red-200"
                       >
                         Reject

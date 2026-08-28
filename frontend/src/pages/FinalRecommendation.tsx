@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import ScoreRing from '../components/ScoreRing';
 import { BackIcon, InfoIcon, MailIcon, SparkIcon, XIcon } from '../components/icons';
 import { useCurrentCandidate, useRecruitment } from '../context/RecruitmentContext';
-import { saveDecision, sendOfferEmail } from '../services/api';
+import { saveDecision, sendOfferEmail, updateCandidateEmail } from '../services/api';
 import { formatDate } from '../utils/formatDate';
 
 type Decision = 'hire' | 'reject';
@@ -38,6 +38,9 @@ export default function FinalRecommendation() {
   const [emailSending, setEmailSending] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
+  const [candidateEmail, setCandidateEmail] = useState('');
+  const [emailEditing, setEmailEditing] = useState(false);
+  const [emailSaving, setEmailSaving] = useState(false);
 
   useEffect(() => {
     loadCandidates();
@@ -47,6 +50,7 @@ export default function FinalRecommendation() {
   useEffect(() => {
     if (!candidate) return;
     setNextSteps(candidate.nextSteps || []);
+    setCandidateEmail(candidate.email || '');
     if (candidate.status === 'hired') {
       setDecision('hire');
       setConfirmed(true);
@@ -151,6 +155,23 @@ export default function FinalRecommendation() {
     }
   };
 
+  const saveCandidateEmail = async () => {
+    if (!candidate) return;
+    setEmailSaving(true);
+    setEmailError('');
+    setEmailSuccess('');
+    try {
+      await updateCandidateEmail(candidate.id, candidateEmail);
+      setEmailEditing(false);
+      setEmailSuccess('Email saved.');
+      await loadCandidates();
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Failed to update email.');
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
   const handleSendOfferEmail = async () => {
     setEmailSending(true);
     setEmailError('');
@@ -184,7 +205,48 @@ export default function FinalRecommendation() {
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold text-gray-900">{candidate.name}</h2>
             <p className="text-sm text-gray-500 mt-0.5">{candidate.role}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Applied {formatDate(candidate.appliedDate) || '—'} · {candidate.email}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Applied {formatDate(candidate.appliedDate) || '—'}</p>
+            <div className="flex items-center gap-2 mt-2">
+              {emailEditing ? (
+                <>
+                  <input
+                    type="email"
+                    value={candidateEmail}
+                    onChange={(e) => setCandidateEmail(e.target.value)}
+                    className="w-72 text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
+                  />
+                  <button
+                    onClick={saveCandidateEmail}
+                    disabled={emailSaving}
+                    className="text-xs px-3 py-2 bg-[#1E3A5F] text-white rounded-lg hover:opacity-90 transition font-medium disabled:opacity-50"
+                  >
+                    {emailSaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEmailEditing(false);
+                      setCandidateEmail(candidate.email || '');
+                    }}
+                    className="text-xs px-3 py-2 text-gray-500 hover:text-gray-700 transition"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <MailIcon width={13} height={13} stroke="#9CA3AF" />
+                  <span className="text-xs text-gray-500">
+                    {candidate.email ? candidate.email : 'No email on file'}
+                  </span>
+                  <button
+                    onClick={() => setEmailEditing(true)}
+                    className="text-xs font-medium text-teal-600 hover:text-teal-700 transition"
+                  >
+                    {candidate.email ? 'Edit' : 'Add email'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           <div className="shrink-0 text-right">
             <ScoreRing score={overallScore} size={84} />

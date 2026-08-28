@@ -17,19 +17,72 @@ export const isClaudeConfigured = () => Boolean(anthropic);
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5';
 
 /**
- * Extract plain text from a PDF buffer using pdf-parse (v2 API).
+ * Extract plain text from a PDF buffer using pdf-parse (v2 API). When the
+ * resulting text is largely unreadable (e.g. a scanned resume or a PDF with an
+ * embedded font that has no Unicode mapping), falls back to OCR (render the
+ * pages to images with pdf-to-img, then read them with tesseract.js).
  */
 export async function extractResumeText(buffer) {
   if (!Buffer.isBuffer(buffer)) throw new Error('Expected a Buffer to extract resume text from');
   const parser = new PDFParse({ data: buffer });
+  let text = '';
   try {
     const result = await parser.getText();
-    const text = (result?.text || '').trim();
-    if (!text) throw new Error('No text could be extracted from the PDF');
-    return text;
+    text = (result?.text || '').trim();
   } finally {
     await parser.destroy();
   }
+
+  if (text && isReadableText(text)) return text;
+
+  // Text is missing or unreadable — fall back to OCR so scanned / encoded-font
+  // PDFs can still be screened.
+  return ocrPdf(buffer);
+}
+
+/**
+ * Heuristic to decide whether extracted text is genuinely readable. Encoded
+ * fonts / scanned docs produce control characters or binary noise rather than
+ * letters, so the ratio of ASCII letters to the total length is a good signal.
+ */
+function isReadableText(text) {
+  if (!text) return false;
+  const len = text.length;
+  if (len < 20) return false;
+  const letters = (text.match(/[A-Za-z]/g) || []).length;
+  return letters / len >= 0.5;
+}
+
+let ocrWorkerPromise = null;
+
+/**
+ * Render each PDF page to an image and OCR it with tesseract.js, returning the
+ * concatenated text. Returns an empty string if every page is blank.
+ */
+async function ocrPdf(buffer) {
+  // pdf-to-img renders using pdfjs-dist. Pin the worker to the same bundled
+  // pdfjs-dist so its internal version check never mismatches.
+  const { createRequire } = await import('node:module');
+  const require = createRequire(import.meta.url);
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'file://' + require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs').replace(/\\/g, '/')
+  ).href;
+
+  const { pdf } = await import('pdf-to-img');
+  const pages = await pdf(new Uint8Array(buffer), { scale: 3 });
+  let allText = '';
+  if (!ocrWorkerPromise) {
+    const { createWorker } = await import('tesseract.js');
+    ocrWorkerPromise = createWorker('eng');
+  }
+  const worker = await ocrWorkerPromise;
+  for await (const image of pages) {
+    const { data } = await worker.recognize(image);
+    const pageText = String(data?.text || '').trim();
+    if (pageText) allText += pageText + '\n';
+  }
+  return allText.trim();
 }
 
 /**
@@ -46,18 +99,35 @@ export async function screenResume(resumeText, jobDescription, jobRequirements, 
 
   const prompt = buildScreeningPrompt(resumeText, jobDescription, jobRequirements, weightedSkills);
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 1500,
-    messages: [{ role: 'user', content: prompt }],
-  });
+  let content = '';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 2500,
+      messages: [{ role: 'user', content: prompt }],
+    });
 
-  const content = (response.content || [])
-    .filter((block) => block.type === 'text')
-    .map((block) => block.text)
-    .join('\n');
+    content = (response.content || [])
+      .filter((block) => block.type === 'text')
+      .map((block) => block.text)
+      .join('\n');
 
-  return parseScreeningJson(content);
+    try {
+      return parseScreeningJson(content);
+    } catch (error) {
+      // Log the failure alongside a snippet of what Claude actually returned so
+      // truncation / empty responses are diagnosable, then retry once.
+      const blockTypes = (response.content || []).map((b) => b.type).join(',');
+      console.warn(
+        `[screenResume] attempt ${attempt + 1} failed (${error.message}). ` +
+          `content.length=${content.length} blocks=[${blockTypes}] ` +
+          `preview="${String(content).slice(0, 300)}"`
+      );
+      if (attempt === 1) throw error;
+    }
+  }
+
+  throw new Error('Claude did not return valid screening JSON');
 }
 
 function buildScreeningPrompt(resumeText, jobDescription, jobRequirements, weightedSkills = '') {
@@ -119,7 +189,12 @@ function parseScreeningJson(text) {
   try {
     parsed = JSON.parse(cleaned);
   } catch (error) {
-    throw new Error(`Claude returned invalid JSON for resume screening: ${error.message}`);
+    // The response is likely truncated (Claude hit its output limit mid-JSON).
+    // Attempt to repair the partial JSON so screening doesn't fail outright.
+    parsed = repairTruncatedJson(cleaned);
+    if (parsed == null) {
+      throw new Error(`Claude returned invalid JSON for resume screening: ${error.message}`);
+    }
   }
 
   const score = Number(parsed.score);
@@ -129,6 +204,90 @@ function parseScreeningJson(text) {
     missing_skills: Array.isArray(parsed.missing_skills) ? parsed.missing_skills.map(String) : [],
     summary: typeof parsed.summary === 'string' ? parsed.summary : '',
   };
+}
+
+/**
+ * Attempt to repair a JSON response that was truncated by Claude's output limit.
+ * Closes any unclosed strings, arrays, and objects, then tries to parse again.
+ * Returns the parsed object, or null if it cannot be salvaged.
+ */
+function repairTruncatedJson(text) {
+  if (!text) return null;
+
+  // Collect the prefix up to the first '{' and work on the tail from there.
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let s = text.slice(start);
+
+  // Build a normalized string where we can repair truncation char by char.
+  let out = '';
+  let i = 0;
+  let inString = false;
+  const stack = [];
+
+  while (i < s.length) {
+    const ch = s[i];
+    if (inString) {
+      out += ch;
+      if (ch === '\\') {
+        if (i + 1 < s.length) {
+          out += s[i + 1];
+          i += 2;
+          continue;
+        }
+      } else if (ch === '"') {
+        inString = false;
+      }
+      i++;
+      continue;
+    }
+    if (ch === '"') {
+      out += ch;
+      inString = true;
+      i++;
+      continue;
+    }
+    if (ch === '{' || ch === '[') {
+      out += ch;
+      stack.push(ch);
+      i++;
+      continue;
+    }
+    if (ch === '}' || ch === ']') {
+      out += ch;
+      if (stack.length) stack.pop();
+      i++;
+      continue;
+    }
+    if (ch === ':' || ch === ',' || ch === ' ') {
+      out += ch;
+      i++;
+      continue;
+    }
+    if (/[\w.+-]/.test(ch)) {
+      out += ch;
+      i++;
+      continue;
+    }
+    // Unknown character: skip it.
+    i++;
+  }
+
+  // Close an unterminated string.
+  if (inString) {
+    out += '"';
+  }
+
+  // Close any unclosed structures in reverse order.
+  for (let j = stack.length - 1; j >= 0; j--) {
+    out += stack[j] === '{' ? '}' : ']';
+  }
+
+  try {
+    return JSON.parse(out);
+  } catch {
+    return null;
+  }
 }
 
 /**

@@ -87,9 +87,18 @@ export const uploadCandidates = async (req, res, next) => {
 
       const { data: urlData } = supabase.storage.from(RESUMES_BUCKET).getPublicUrl(storagePath);
 
+      let extractedEmail = '';
+      try {
+        const text = await extractResumeText(file.buffer);
+        const match = text.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/i);
+        if (match) extractedEmail = match[0].trim().toLowerCase();
+      } catch {
+        // Non-PDF or unparseable file — leave email empty rather than blocking upload
+      }
+
       const row = {
         name: nameFromFileName(file.originalname) || 'Candidate',
-        email: '',
+        email: extractedEmail,
         job_id: jobId,
         resume_url: urlData.publicUrl,
         status: 'new',
@@ -115,6 +124,42 @@ export const uploadCandidates = async (req, res, next) => {
     }
 
     res.status(201).json({ jobId, total: created.length, candidates: created });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateCandidateEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email } = req.body || {};
+
+    if (typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    const normalized = email.trim().toLowerCase();
+    const emailRegex = /^[\w.+-]+@[\w-]+(?:\.[\w-]+)+$/;
+    if (!emailRegex.test(normalized)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    const { data: candidate, error: fetchError } = await supabase
+      .from('candidates')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+    if (fetchError) return next(fetchError);
+    if (!candidate) return res.status(404).json({ error: 'Candidate not found' });
+
+    const { data: updated, error } = await supabase
+      .from('candidates')
+      .update({ email: normalized })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) return next(error);
+
+    res.json({ email: updated.email });
   } catch (error) {
     next(error);
   }

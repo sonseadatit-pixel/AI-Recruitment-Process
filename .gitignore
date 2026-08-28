@@ -30,3 +30,6 @@ npm-debug.log*
 
 # Vite cache
 frontend/node_modules/.vite/
+
+# Tesseract OCR language data (downloaded at runtime)
+*.traineddata

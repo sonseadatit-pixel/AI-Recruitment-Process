@@ -5,6 +5,7 @@ import {
   getCandidates,
   uploadCandidates,
   deleteCandidate,
+  updateCandidateEmail,
   getInterviewQuestions,
   updateInterviewQuestions,
   getSavedInterviewQuestions,
@@ -25,6 +26,7 @@ router.put('/:id/interview-questions', updateInterviewQuestions);
 router.post('/:id/interview-evaluation', getInterviewEvaluation);
 router.put('/:id/interview-evaluation', updateInterviewEvaluation);
 router.put('/:id/decision', saveDecision);
+router.patch('/:id/email', requireUser, updateCandidateEmail);
 router.post('/:id/send-offer-email', requireUser, sendOfferEmail);
 router.delete('/:id', deleteCandidate);
 

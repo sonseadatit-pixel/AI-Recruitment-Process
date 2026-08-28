@@ -76,6 +76,10 @@ export const runScreening = async (req, res, next) => {
 
         const buffer = await downloadFile(candidate.resume_url);
         const resumeText = await extractResumeText(buffer);
+        console.warn(
+          `[screening] "${candidate.name}" resumeText.length=${resumeText.length} ` +
+            `jobDesc.length=${(jobDescription || '').length} jobReq.length=${(jobRequirements || '').length}`
+        );
         const result = await screenResume(resumeText, jobDescription, jobRequirements, weightedSkills);
 
         await saveScreeningResult(candidate.id, result);

@@ -469,6 +469,23 @@ export async function saveDecision(
   }
 }
 
+export async function updateCandidateEmail(
+  candidateId: string,
+  email: string
+): Promise<{ email: string }> {
+  const headers = { ...(await authHeaders()), 'Content-Type': 'application/json' };
+  const res = await fetch(`${BACKEND_URL}/candidates/${encodeURIComponent(candidateId)}/email`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to update email (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 export async function sendOfferEmail(
   candidateId: string
 ): Promise<{ message_id: string; to: string; sent_at: string }> {

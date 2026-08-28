@@ -256,15 +256,6 @@ export default function Candidates() {
               ))}
             </div>
           </Card>
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-2">Quick Stats</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs"><span className="text-gray-500">Total uploaded</span><span className="font-semibold text-gray-800">{candidates.length}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-gray-500">Already screened</span><span className="font-semibold text-gray-800">{screenedCandidates.length}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-gray-500">Active job postings</span><span className="font-semibold text-gray-800">{jobs.filter((j) => j.status === 'open' || j.status === 'Active').length}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-gray-500">AI screening</span><span className="font-semibold text-gray-800">{screening ? 'Running…' : 'Ready'}</span></div>
-            </div>
-          </Card>
 
           {/* Already screened CVs */}
           <Card>
@@ -272,10 +263,16 @@ export default function Candidates() {
               <h3 className="text-sm font-semibold text-gray-800">
                 Already Screened <span className="ml-1 text-xs font-normal text-gray-400">({screenedCandidates.length})</span>
               </h3>
+              <button
+                onClick={() => navigate('/screening')}
+                className="text-xs font-medium text-teal-600 hover:text-teal-700 transition"
+              >
+                View all →
+              </button>
             </div>
             <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
               {screenedCandidates.length > 0 ? (
-                screenedCandidates.map((c) => (
+                screenedCandidates.slice(0, 5).map((c) => (
                   <div key={c.id} className="px-5 py-3 flex items-center gap-3">
                     <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center shrink-0">
                       <FileIcon stroke="#0D9488" />
