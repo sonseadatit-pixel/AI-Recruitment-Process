@@ -28,10 +28,13 @@ export default function Candidates() {
   }, []);
 
   useEffect(() => {
-    if (jobId) return;
-    const firstPending = candidates.find((c) => !c.screened && c.jobId);
+    if (jobId || jobs.length === 0) return;
+    const firstPending = candidates.find(
+      (c) => !c.screened && c.jobId && isActiveJob(jobs.find((j) => j.id === c.jobId)?.status ?? '')
+    );
     if (firstPending?.jobId) setJobId(firstPending.jobId);
-  }, [candidates, jobId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidates, jobId, jobs]);
 
   const upload = async (files: File[]) => {
     if (!jobId) {
@@ -46,7 +49,11 @@ export default function Candidates() {
       const updated = await fetchCandidates();
       setCandidates(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed. Check that the backend is running.');
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Upload failed. The connection was interrupted — make sure the backend (port 5000) is running.'
+      );
     } finally {
       setUploading(false);
     }
@@ -108,6 +115,11 @@ export default function Candidates() {
   const pendingCandidates = candidates.filter((c) => !c.screened && (!jobId || c.jobId === jobId));
   const screenedCandidates = candidates.filter((c) => c.screened && (!jobId || c.jobId === jobId));
 
+  // Only open/active jobs accept new resume uploads; closed jobs must not
+  // appear in the upload dropdown.
+  const isActiveJob = (s: string) => s === 'open' || s === 'Active';
+  const activeJobs = jobs.filter((j) => isActiveJob(j.status));
+
   return (
     <div className="p-8 space-y-5">
       <div className="grid grid-cols-3 gap-5">
@@ -150,9 +162,12 @@ export default function Candidates() {
               className="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 bg-white transition"
             >
               <option value="">Select a job…</option>
-              {jobs.map((j) => (
+              {activeJobs.map((j) => (
                 <option key={j.id} value={j.id}>{j.title} — {j.department}</option>
               ))}
+              {activeJobs.length === 0 && (
+                <option value="" disabled>No open jobs — create or reopen a job first</option>
+              )}
             </select>
             <p className="text-xs text-gray-400 mt-1.5">
               Resumes are uploaded to Supabase Storage and listed as new candidates. Click "Run AI Screening" to score them with Claude.

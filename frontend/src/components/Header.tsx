@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SearchIcon, BellIcon } from './icons';
+import { BellIcon } from './icons';
 import { useAuth } from '../context/AuthContext';
 import { fetchNotifications, markNotificationRead } from '../services/api';
 import { formatRelativeTime } from '../utils/formatDate';
@@ -103,14 +103,6 @@ export default function Header() {
         <p className="text-xs text-gray-400 mt-0.5">{subtitleText}</p>
       </div>
       <div className="flex items-center gap-3">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search candidates, jobs..."
-            className="text-sm pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg w-60 focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 placeholder:text-gray-400 transition"
-          />
-          <SearchIcon className="absolute left-3 top-2.5 text-gray-400" />
-        </div>
         <div className="relative" ref={bellRef}>
           <button
             type="button"

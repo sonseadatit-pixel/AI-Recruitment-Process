@@ -9,19 +9,6 @@ import { formatDate } from '../utils/formatDate';
 
 type Decision = 'hire' | 'reject';
 
-const HIRE_STEPS = [
-  { key: 'request-references', label: 'Request 2–3 references' },
-  { key: 'prepare-offer-letter', label: 'Prepare offer letter' },
-  { key: 'schedule-onboarding', label: 'Schedule onboarding call' },
-  { key: 'notify-hiring-manager', label: 'Notify hiring manager' },
-];
-
-const REJECT_STEPS = [
-  { key: 'send-notification', label: 'Send candidate notification' },
-  { key: 'archive-application', label: 'Archive application' },
-  { key: 'update-pipeline-report', label: 'Update pipeline report' },
-];
-
 export default function FinalRecommendation() {
   const navigate = useNavigate();
   const candidate = useCurrentCandidate();
@@ -32,7 +19,6 @@ export default function FinalRecommendation() {
   const [modalOpen, setModalOpen] = useState(false);
   const [hireStartDate, setHireStartDate] = useState('');
   const [hireNotes, setHireNotes] = useState('');
-  const [nextSteps, setNextSteps] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [emailSending, setEmailSending] = useState(false);
@@ -49,7 +35,6 @@ export default function FinalRecommendation() {
   // Reflect persisted decision whenever the candidate loads/refreshes.
   useEffect(() => {
     if (!candidate) return;
-    setNextSteps(candidate.nextSteps || []);
     setCandidateEmail(candidate.email || '');
     if (candidate.status === 'hired') {
       setDecision('hire');
@@ -113,7 +98,6 @@ export default function FinalRecommendation() {
         decision,
         hireStartDate: decision === 'hire' ? hireStartDate : undefined,
         hireNotes: hireNotes.trim(),
-        nextSteps,
       });
       setConfirmed(true);
       setModalOpen(false);
@@ -134,24 +118,11 @@ export default function FinalRecommendation() {
       setConfirmed(false);
       setHireStartDate('');
       setHireNotes('');
-      setNextSteps([]);
       await loadCandidates();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to undo decision.');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const toggleStep = async (key: string) => {
-    const next = nextSteps.includes(key)
-      ? nextSteps.filter((k) => k !== key)
-      : [...nextSteps, key];
-    setNextSteps(next);
-    try {
-      await saveDecision(candidate.id, { nextSteps: next });
-    } catch {
-      // best-effort: the checklist is still usable offline
     }
   };
 
@@ -186,8 +157,6 @@ export default function FinalRecommendation() {
       setEmailSending(false);
     }
   };
-
-  const currentSteps = decision === 'reject' ? REJECT_STEPS : HIRE_STEPS;
 
   return (
     <div className="p-8 space-y-5">
@@ -448,25 +417,6 @@ export default function FinalRecommendation() {
               </button>
             </Card>
           )}
-
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Next Steps</h3>
-            <div className="space-y-2.5">
-              {currentSteps.map((step) => (
-                <div key={step.key} className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    checked={nextSteps.includes(step.key)}
-                    onChange={() => toggleStep(step.key)}
-                    className="mt-0.5 accent-teal-500 shrink-0"
-                  />
-                  <span className={`text-xs ${nextSteps.includes(step.key) ? 'text-gray-400 line-through' : 'text-gray-600'}`}>
-                    {step.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
 
           <Card className="p-4 bg-gray-50/60 border-gray-100">
             <p className="text-xs text-gray-500 font-medium mb-2">Recruitment Summary</p>

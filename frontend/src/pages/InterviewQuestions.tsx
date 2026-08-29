@@ -220,7 +220,7 @@ export default function InterviewQuestions() {
           type="text"
           value={customInstructions}
           onChange={(e) => setCustomInstructions(e.target.value)}
-          placeholder="Optional: add specific instructions for the AI (e.g. 'simpler questions', 'focus on React')"
+          placeholder="Optional: add specific instructions for the AI (e.g. 'simpler questions', 'focus on the role's key responsibilities')"
           className="w-full text-xs px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
         />
         <div className="flex justify-end">

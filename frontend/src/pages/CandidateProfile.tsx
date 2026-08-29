@@ -4,9 +4,9 @@ import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import ScoreRing from '../components/ScoreRing';
 import SkillTag from '../components/SkillTag';
-import { BackIcon, ChatIcon, ChevronRightIcon, InfoIcon, SparkIcon, StarIcon } from '../components/icons';
+import { BackIcon, ChatIcon, ChevronRightIcon, InfoIcon, MailIcon, PencilIcon, SparkIcon, StarIcon } from '../components/icons';
 import { useCurrentCandidate } from '../context/RecruitmentContext';
-import { fetchSavedInterviewQuestions } from '../services/api';
+import { fetchSavedInterviewQuestions, updateCandidateEmail } from '../services/api';
 import { formatDate } from '../utils/formatDate';
 import type { AiQuestionSet } from '../types';
 
@@ -15,6 +15,12 @@ export default function CandidateProfile() {
   const candidate = useCurrentCandidate();
   const [savedQuestions, setSavedQuestions] = useState<AiQuestionSet>({ technical: [], behavioral: [] });
   const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [emailDraft, setEmailDraft] = useState('');
+  const [savedEmail, setSavedEmail] = useState('');
+  const [emailEditing, setEmailEditing] = useState(false);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [emailSuccess, setEmailSuccess] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -34,6 +40,32 @@ export default function CandidateProfile() {
       cancelled = true;
     };
   }, [candidate]);
+
+  useEffect(() => {
+    if (!candidate) return;
+    setEmailDraft(candidate.email || '');
+    setSavedEmail(candidate.email || '');
+    setEmailEditing(false);
+    setEmailError('');
+    setEmailSuccess('');
+  }, [candidate]);
+
+  const saveEmail = async () => {
+    if (!candidate) return;
+    setEmailSaving(true);
+    setEmailError('');
+    setEmailSuccess('');
+    try {
+      await updateCandidateEmail(candidate.id, emailDraft);
+      setSavedEmail(emailDraft);
+      setEmailSaving(false);
+      setEmailEditing(false);
+      setEmailSuccess('Email saved.');
+    } catch (err) {
+      setEmailSaving(false);
+      setEmailError(err instanceof Error ? err.message : 'Failed to update email.');
+    }
+  };
 
   const hasQuestions = savedQuestions.technical.length > 0 || savedQuestions.behavioral.length > 0;
   const totalQuestions = savedQuestions.technical.length + savedQuestions.behavioral.length;
@@ -71,7 +103,55 @@ export default function CandidateProfile() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{candidate.name}</h2>
-              <p className="text-sm text-gray-500">{candidate.email}</p>
+              {emailEditing ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="email"
+                    value={emailDraft}
+                    onChange={(e) => setEmailDraft(e.target.value)}
+                    placeholder="candidate@email.com"
+                    className="text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 w-72 focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
+                  />
+                  <button
+                    onClick={saveEmail}
+                    disabled={emailSaving}
+                    className="text-xs px-3 py-1.5 bg-[#1E3A5F] text-white rounded-lg hover:opacity-90 transition font-medium disabled:opacity-50"
+                  >
+                    {emailSaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEmailEditing(false);
+                      setEmailDraft(savedEmail || '');
+                      setEmailError('');
+                    }}
+                    className="text-xs px-2 py-1.5 text-gray-500 hover:text-gray-700 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mt-1">
+                  <MailIcon width={14} height={14} stroke="#9CA3AF" />
+                  {savedEmail ? (
+                    <p className="text-sm text-gray-500">{savedEmail}</p>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-amber-600 font-medium">No email on file — required to send offer emails</span>
+                      <button onClick={() => setEmailEditing(true)} className="text-xs font-medium text-teal-600 hover:text-teal-700 transition flex items-center gap-1">
+                        <PencilIcon width={12} height={12} /> Add email
+                      </button>
+                    </div>
+                  )}
+                  {savedEmail && (
+                    <button onClick={() => setEmailEditing(true)} className="text-xs font-medium text-teal-600 hover:text-teal-700 transition flex items-center gap-1">
+                      <PencilIcon width={12} height={12} /> Edit
+                    </button>
+                  )}
+                </div>
+              )}
+              {emailError && <p className="text-xs text-red-600 mt-1">{emailError}</p>}
+              {emailSuccess && <p className="text-xs text-emerald-600 mt-1">{emailSuccess}</p>}
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-xs text-gray-400">Applied {formatDate(candidate.appliedDate) || '—'}</span>
                 <span className="text-xs text-gray-300">·</span>
@@ -182,17 +262,6 @@ export default function CandidateProfile() {
                   <span className="block text-xs text-amber-50 mt-0.5">Review the final AI-informed hiring recommendation</span>
                 </span>
                 <ChevronRightIcon className="shrink-0 text-white/60 transition group-hover:translate-x-0.5 group-hover:text-white" />
-              </button>
-            </div>
-          </Card>
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Quick Decision</h3>
-            <div className="space-y-2">
-              <button className="w-full py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition">
-                Approve
-              </button>
-              <button className="w-full py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition">
-                Reject
               </button>
             </div>
           </Card>

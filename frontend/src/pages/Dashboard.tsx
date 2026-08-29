@@ -87,7 +87,7 @@ export default function Dashboard() {
           </div>
           <div className="divide-y divide-gray-50">
             {candidates.length > 0 ? (
-              candidates.slice(0, 5).map((c) => (
+              candidates.slice(0, 10).map((c) => (
                 <div
                   key={c.id}
                   className="px-6 py-3.5 flex items-center gap-4 hover:bg-gray-50/70 transition cursor-pointer"

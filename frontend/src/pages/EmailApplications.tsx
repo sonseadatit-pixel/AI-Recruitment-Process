@@ -91,6 +91,10 @@ export default function EmailApplications() {
     [applications, filter]
   );
 
+  // Only open/active jobs can accept a CV into screening; closed jobs are
+  // hidden from the submit-to-screening job picker.
+  const activeJobs = jobs.filter((j) => j.status === 'open' || j.status === 'Active');
+
   const applyUpdate = (updated: EmailApplication) => {
     setApplications((prev) => prev.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)));
     setDetailApp((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
@@ -155,11 +159,14 @@ export default function EmailApplications() {
       className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400"
     >
       <option value="">Select a job…</option>
-      {jobs.map((j) => (
+      {activeJobs.map((j) => (
         <option key={j.id} value={j.id}>
           {j.title} — {j.department}
         </option>
       ))}
+      {activeJobs.length === 0 && (
+        <option value="" disabled>No open jobs</option>
+      )}
     </select>
   );
 
@@ -211,7 +218,7 @@ export default function EmailApplications() {
   const ActionCell = ({ app }: { app: EmailApplication }) => {
     const status = normStatus(app.status);
     return (
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
         <button
           type="button"
           onClick={(e) => {
@@ -370,16 +377,17 @@ export default function EmailApplications() {
           </h3>
           {loading && <span className="text-xs text-teal-600 font-medium animate-pulse">Loading…</span>}
         </div>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-50">
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Sender</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Subject</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Received</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Action</th>
-            </tr>
-          </thead>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px]">
+            <thead>
+              <tr className="border-b border-gray-50">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Sender</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Subject</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Received</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Action</th>
+              </tr>
+            </thead>
           <tbody className="divide-y divide-gray-50">
             {loading && (
               <tr>
@@ -436,7 +444,8 @@ export default function EmailApplications() {
               );
             })}
           </tbody>
-        </table>
+          </table>
+        </div>
       </Card>
 
       {message && <p className="text-sm text-teal-600 font-medium">{message}</p>}

@@ -86,7 +86,7 @@ export default function JobForm({ initial, onSaved, onCancel }: JobFormProps) {
             name="title"
             required
             defaultValue={initial?.title}
-            placeholder="e.g. Senior Frontend Engineer"
+            placeholder="e.g. Senior Account Manager, Registered Nurse, Operations Lead"
             className="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
           />
         </div>
@@ -96,25 +96,38 @@ export default function JobForm({ initial, onSaved, onCancel }: JobFormProps) {
             id="department"
             name="department"
             required
-            defaultValue={initial?.department || 'Engineering'}
-            className="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 bg-white transition"
-          >
+            defaultValue={initial?.department || ''}
+            className="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 bg-white transition">
+            <option value="" disabled>Select a department…</option>
+            <option>Operations</option>
+            <option>Sales</option>
+            <option>Marketing</option>
+            <option>Finance</option>
+            <option>Accounting</option>
+            <option>Human Resources</option>  
+            <option>Administration</option>
+            <option>Customer Service</option>
+            <option>Information Technology (IT)</option>
             <option>Engineering</option>
             <option>Design</option>
             <option>Product</option>
             <option>Analytics</option>
+            <option>Procurement</option>
+            <option>Healthcare</option>
+            <option>Legal</option>
+            <option>Manufacturing / Production</option>
+            <option>Other</option>
           </select>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Experience Level *</label>
           <div className="flex gap-2">
-            {['Junior', 'Mid-level', 'Senior', 'Staff'].map((l) => (
+            {['Internship', 'Entry-level', 'Mid-level','Senior', 'Lead'].map((l) => (
               <button
                 key={l}
                 type="button"
                 onClick={() => setExperienceLevel(l)}
-                className={`flex-1 text-xs py-2 rounded-lg border transition font-medium ${l === experienceLevel ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-              >
+                className={`flex-1 text-xs py-2 rounded-lg border transition font-medium ${l === experienceLevel ? 'bg-[#1E3A5F] text-white border-[#1E3A5F]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                 {l}
               </button>
             ))}
@@ -128,7 +141,7 @@ export default function JobForm({ initial, onSaved, onCancel }: JobFormProps) {
             rows={4}
             value={requirements}
             onChange={(e) => setRequirements(e.target.value)}
-            placeholder="React, TypeScript, GraphQL, AWS, 5+ years experience, strong testing background"
+            placeholder="e.g. 5+ years experience, relevant certification, strong communication, leadership"
             className="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 resize-none transition"
           />
           <p className="text-xs text-gray-400 mt-1">
@@ -141,7 +154,7 @@ export default function JobForm({ initial, onSaved, onCancel }: JobFormProps) {
             id="location"
             name="location"
             defaultValue={initial?.location}
-            placeholder="Remote (US)"
+            placeholder="e.g. Office or Remote"
             className="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
           />
         </div>
