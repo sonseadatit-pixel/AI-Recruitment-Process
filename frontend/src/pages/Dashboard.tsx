@@ -34,7 +34,7 @@ export default function Dashboard() {
       label: 'Total Jobs',
       value: jobs.length.toString(),
       change: stats?.changes.jobs ?? 'Live',
-      color: 'text-teal-400 ',
+      color: 'text-teal-600 ',
       bg: 'bg-teal-400 ',
     },
     {
