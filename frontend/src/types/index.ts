@@ -78,6 +78,27 @@ export interface AiQuestionSet {
   behavioral: string[];
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt?: string;
+  attachmentName?: string;
+  attachmentType?: string;
+}
+
+export interface ChatAttachment {
+  name: string;
+  type: string;
+  bytes: Uint8Array;
+}
+
+export interface ConversationSummary {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AppSettings {
   userId?: string;
   minAiScore: number;

@@ -12,6 +12,7 @@ import settingsRoutes from './routes/settings.js';
 import emailWebhookRoutes from './routes/emailWebhook.js';
 import notificationsRoutes from './routes/notifications.js';
 import emailApplicationsRoutes from './routes/emailApplications.js';
+import assistantRoutes from './routes/assistant.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -32,6 +33,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/email-webhook', emailWebhookRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/email-applications', emailApplicationsRoutes);
+app.use('/api/assistant', assistantRoutes);
 
 // In production, serve the built React app (frontend/dist) alongside the API so
 // a single Render web service hosts the whole app. Skipped in local dev where

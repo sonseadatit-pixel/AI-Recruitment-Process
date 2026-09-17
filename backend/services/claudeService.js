@@ -514,6 +514,87 @@ Recommendation: ${recommendation || '(not provided)'}
 ${interviewFeedback || '(not provided)'}`;
 }
 
+/**
+ * Open-ended assistant chat (POST /api/assistant/chat). Unlike the screening /
+ * questions flows this is a general-purpose conversation with Claude: it is NOT
+ * restricted to system data. Page/candidate context and overall stats are
+ * provided as light background only, never as hard limits on what can be
+ * discussed. Returns the full reply as plain text (multi-paragraph supported).
+ */
+/**
+ * Plain-text chat with Claude for the AI Assistant widget. `attachment` is
+ * optional and, when present, is either:
+ *   { kind: 'image', fileName, mimeType, base64 } — added as a Claude image
+ *     block so Claude can read CVs / screenshots visually (no OCR needed), or
+ *   { kind: 'text', fileName, text } — prepended to the message as extracted
+ *     document text (e.g. PDF / DOCX body copied from a CV).
+ * Returns the full reply as plain text (multi-paragraph supported).
+ */
+export async function chatWithAssistant({ message, conversationHistory, page, candidateContext, stats, jobsList, candidatesList, attachment }) {
+  if (!isClaudeConfigured()) {
+    throw new Error('ANTHROPIC_API_KEY is not set. The AI assistant is unavailable.');
+  }
+
+  const system = buildAssistantSystemPrompt({ page, candidateContext, stats, jobsList, candidatesList });
+
+  const history = (Array.isArray(conversationHistory) ? conversationHistory : [])
+    .filter((m) => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'))
+    .slice(-30)
+    .map((m) => ({ role: m.role, content: String(m.content) }));
+
+  let userContent;
+  if (attachment && attachment.kind === 'image') {
+    userContent = {
+      role: 'user',
+      content: [
+        { type: 'text', text: String(message || '') },
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: attachment.mimeType || 'image/png',
+            data: attachment.base64,
+          },
+        },
+      ],
+    };
+  } else {
+    userContent = { role: 'user', content: String(message || '') };
+  }
+
+  const response = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 4000,
+    system,
+    messages: [...history, userContent],
+  });
+
+  return (response.content || [])
+    .filter((block) => block.type === 'text')
+    .map((block) => block.text)
+    .join('\n')
+    .trim();
+}
+
+const ASSISTANT_SYSTEM_BASE = `You are an AI assistant embedded in the TalentAI recruitment system, helping HR staff. You can discuss anything they ask — including reviewing any resume or CV text they paste directly into the chat, giving your own independent assessment, answering general HR/recruitment questions, or drafting text. You are not limited to only answering questions about this system's data. When relevant page/candidate context is provided below, use it to inform your answer, but don't restrict your answers to only that context — behave like a normal, capable assistant having an open conversation.
+
+IMPORTANT FORMATTING RULE: Always reply in PLAIN TEXT. Never use Markdown. Do not use *asterisks* for bold or italics, do not use # hashes for headings, do not use code fences (\`\`\`), and do not use table syntax. For emphasis, use plain words like "important" or capital letters sparingly. For lists, use a simple dash (-) followed by a space at the start of each line. Break sections apart with a blank line and a short plain label instead of a heading.`;
+
+function buildAssistantSystemPrompt({ page, candidateContext, stats, jobsList, candidatesList }) {
+  const parts = [ASSISTANT_SYSTEM_BASE];
+  if (stats) parts.push(`\n=== SYSTEM OVERVIEW ===\n${stats}`);
+  if (jobsList) parts.push(`\n=== CURRENT JOBS ===\n${jobsList}`);
+  if (candidatesList) parts.push(`\n=== RECENT CANDIDATES ===\n${candidatesList}`);
+  if (page) parts.push(`\n=== CURRENT PAGE ===\nThe user is currently on the "${page}" page.`);
+  if (candidateContext) {
+    parts.push(
+      `\n=== CURRENTLY VIEWING CANDIDATE ===\n${candidateContext}\n` +
+        `(The candidate details above are background context pulled from the system. Use them where relevant, but you are not restricted to them.)`
+    );
+  }
+  return parts.join('\n');
+}
+
 /*
  * Legacy batch flow (POST /api/screening/batch). Screens uploaded resume files
  * against a job using the same Claude pipeline.

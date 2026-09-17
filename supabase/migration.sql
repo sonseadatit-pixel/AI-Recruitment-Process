@@ -100,3 +100,32 @@ We look forward to welcoming you to the team!
 
 Best regards,
 {{sender_name}}$$;
+
+-- AI Assistant chat persistence. Run this before using the chat's conversation
+-- history (History list / resume previous conversations in the widget).
+-- assistant_conversations holds one row per chat thread owned by a user; its
+-- title is auto-set from the first user message (~40 chars).
+CREATE TABLE IF NOT EXISTS assistant_conversations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id),
+  title text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Individual chat turns (user + assistant) belonging to a conversation. Deleting
+-- a conversation cascades to its messages.
+CREATE TABLE IF NOT EXISTS assistant_messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id uuid REFERENCES assistant_conversations(id) ON DELETE CASCADE,
+  role text NOT NULL CHECK (role IN ('user', 'assistant')),
+  content text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Chat attachments (CV files / images posted to the assistant). Run this before
+-- sending files through POST /api/assistant/chat, or attachment chips won't show
+-- in the message history.
+ALTER TABLE assistant_messages
+  ADD COLUMN IF NOT EXISTS attachment_name text,
+  ADD COLUMN IF NOT EXISTS attachment_type text;

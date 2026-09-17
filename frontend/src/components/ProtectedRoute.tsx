@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import AiAssistant from './AiAssistant';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute() {
@@ -28,6 +29,7 @@ export default function ProtectedRoute() {
           <Outlet />
         </main>
       </div>
+      <AiAssistant />
     </div>
   );
 }

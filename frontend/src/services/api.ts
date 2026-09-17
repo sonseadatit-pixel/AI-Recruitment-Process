@@ -3,6 +3,9 @@ import type {
   AiQuestionSet,
   AppSettings,
   Candidate,
+  ChatAttachment,
+  ChatMessage,
+  ConversationSummary,
   DashboardStats,
   EmailApplication,
   JobPosting,
@@ -582,4 +585,96 @@ export async function rejectEmailApplication(id: string): Promise<EmailApplicati
 export async function fetchPipeline(): Promise<PipelineStage[]> {
   // TODO: aggregate pipeline counts from Supabase
   return [];
+}
+
+export async function sendAssistantMessage(input: {
+  message: string;
+  conversationHistory: ChatMessage[];
+  context: { page: string; candidateId?: string };
+  conversationId?: string;
+  file?: ChatAttachment | null;
+}): Promise<{ reply: string; conversationId: string }> {
+  const headers = await authHeaders();
+  let res: Response;
+
+  if (input.file) {
+    const formData = new FormData();
+    formData.append('message', input.message);
+    formData.append('conversationHistory', JSON.stringify(input.conversationHistory));
+    formData.append('context', JSON.stringify(input.context));
+    if (input.conversationId) formData.append('conversationId', input.conversationId);
+    formData.append(
+      'file',
+      new Blob([input.file.bytes as BlobPart], { type: input.file.type }),
+      input.file.name
+    );
+    res = await fetch(`${BACKEND_URL}/assistant/chat`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+  } else {
+    res = await fetch(`${BACKEND_URL}/assistant/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(input),
+    });
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Assistant request failed (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  return { reply: String(data.reply ?? ''), conversationId: String(data.conversationId ?? '') };
+}
+
+export async function fetchConversations(): Promise<ConversationSummary[]> {
+  const headers = { ...(await authHeaders()) };
+  const res = await fetch(`${BACKEND_URL}/assistant/conversations`, { headers });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to load conversations (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function createConversation(): Promise<ConversationSummary> {
+  const headers = { ...(await authHeaders()), 'Content-Type': 'application/json' };
+  const res = await fetch(`${BACKEND_URL}/assistant/conversations`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to create conversation (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchConversationMessages(
+  conversationId: string
+): Promise<ChatMessage[]> {
+  const headers = { ...(await authHeaders()) };
+  const res = await fetch(`${BACKEND_URL}/assistant/conversations/${conversationId}/messages`, {
+    headers,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to load messages (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function deleteConversation(conversationId: string): Promise<void> {
+  const headers = { ...(await authHeaders()) };
+  const res = await fetch(`${BACKEND_URL}/assistant/conversations/${conversationId}`, {
+    method: 'DELETE',
+    headers,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Failed to delete conversation (HTTP ${res.status})`);
+  }
 }
