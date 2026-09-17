@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
-import { StarIcon, UserIcon } from '../components/icons';
+import { UserIcon } from '../components/icons';
 import { useRecruitment } from '../context/RecruitmentContext';
 import { formatDate } from '../utils/formatDate';
 
@@ -35,7 +35,6 @@ export default function Recommendations() {
             <tr className="border-b border-gray-50">
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Candidate</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Job</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">AI Screening Score</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Interview Score</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Overall Match</th>
@@ -46,12 +45,12 @@ export default function Recommendations() {
           <tbody className="divide-y divide-gray-50">
             {loading && (
               <tr>
-                <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-400">Loading recommendations…</td>
+                <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-400">Loading recommendations…</td>
               </tr>
             )}
             {!loading && recommendationStage.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-400">
+                <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-400">
                   No recommendations yet. Review interviews and move candidates to the final recommendation stage.
                 </td>
               </tr>
@@ -85,15 +84,9 @@ export default function Recommendations() {
                   ) : (
                     <span className="text-xs text-gray-400">—</span>
                   )}
-                </td>
+</td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <StarIcon width={13} height={13} stroke="#6B7280" />
-                      <span className="text-sm text-gray-700">{c.role}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-base font-bold ${c.score >= 80 ? 'text-teal-600' : c.score >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{c.score}</span>
+                  <span className={`text-base font-bold ${c.score >= 80 ? 'text-teal-600' : c.score >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{c.score}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`text-base font-bold ${(c.interviewScore ?? 0) >= 80 ? 'text-teal-600' : (c.interviewScore ?? 0) >= 60 ? 'text-amber-500' : 'text-red-500'}`}>
@@ -101,15 +94,7 @@ export default function Recommendations() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`text-base font-bold ${match >= 80 ? 'text-teal-600' : match >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{match}</span>
-                      <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${match >= 80 ? 'bg-teal-400' : match >= 60 ? 'bg-amber-400' : 'bg-red-400'}`}
-                          style={{ width: `${match}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                    <span className={`text-base font-bold ${match >= 80 ? 'text-teal-600' : match >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{match}</span>
                   </td>
                   <td className="px-6 py-4 text-left">
                     {decision === 'hired' && c.hireStartDate ? (

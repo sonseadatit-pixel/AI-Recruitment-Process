@@ -174,13 +174,8 @@ export default function Screening() {
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-2.5">
                     <span className={`text-base font-bold ${c.score >= 80 ? 'text-teal-600' : c.score >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{c.score}</span>
-                    <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${c.score >= 80 ? 'bg-teal-400' : c.score >= 60 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: `${c.score}%` }}></div>
-                    </div>
-                  </div>
-                </td>
+                  </td>
                 <td className="px-6 py-4"><StatusBadge status={c.status} /></td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
