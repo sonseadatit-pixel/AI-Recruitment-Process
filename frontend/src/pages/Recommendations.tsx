@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
-import { StarIcon } from '../components/icons';
+import { StarIcon, UserIcon } from '../components/icons';
 import { useRecruitment } from '../context/RecruitmentContext';
 import { formatDate } from '../utils/formatDate';
 
@@ -70,8 +70,8 @@ export default function Recommendations() {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {c.name.split(' ').map((n) => n[0]).join('')}
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white shrink-0">
+                        <UserIcon width={16} height={16} />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900">{c.name}</p>

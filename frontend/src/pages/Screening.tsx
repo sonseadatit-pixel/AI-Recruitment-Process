@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
-import { InfoIcon, SparkIcon } from '../components/icons';
+import { InfoIcon, SparkIcon, UserIcon } from '../components/icons';
 import { useRecruitment } from '../context/RecruitmentContext';
 import { saveDecision } from '../services/api';
 
@@ -157,8 +157,8 @@ export default function Screening() {
               <tr key={c.id} className={`hover:bg-gray-50/60 transition ${c.status === 'ai-suggested' ? 'bg-indigo-50/20' : ''}`}>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                      {c.name.split(' ').map((n) => n[0]).join('')}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white shrink-0">
+                      <UserIcon width={16} height={16} />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">{c.name}</p>

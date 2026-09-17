@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
-import { BackIcon, PrintIcon, SparkIcon, XIcon } from '../components/icons';
+import { BackIcon, PrintIcon, SparkIcon, UserIcon, XIcon } from '../components/icons';
 import { useCurrentCandidate } from '../context/RecruitmentContext';
 import {
   fetchSavedInterviewQuestions,
@@ -202,8 +202,8 @@ export default function InterviewQuestions() {
 
       {/* Candidate chip */}
       <Card className="p-4 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white text-sm font-bold shrink-0">
-          {candidate.name.split(' ').map((n) => n[0]).join('')}
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white shrink-0">
+          <UserIcon width={18} height={18} />
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-gray-900">{candidate.name}</p>
@@ -220,7 +220,7 @@ export default function InterviewQuestions() {
           type="text"
           value={customInstructions}
           onChange={(e) => setCustomInstructions(e.target.value)}
-          placeholder="Optional: add specific instructions for the AI (e.g. 'simpler questions', 'focus on the role's key responsibilities')"
+          placeholder="Optional: add specific instructions for the AI"
           className="w-full text-xs px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
         />
         <div className="flex justify-end">

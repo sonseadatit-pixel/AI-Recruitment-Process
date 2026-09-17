@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import type { ComponentType, SVGProps } from 'react';
-import { GridIcon, BriefcaseIcon, UsersIcon, ScanIcon, ChatIcon, StarIcon, SettingsIcon, LogoutIcon, MailIcon } from './icons';
+import { GridIcon, BriefcaseIcon, UsersIcon, ScanIcon, ChatIcon, StarIcon, SettingsIcon, LogoutIcon, MailIcon, UserIcon } from './icons';
 import { useRecruitment } from '../context/RecruitmentContext';
 import { useAuth } from '../context/AuthContext';
 import logo from '../image/logo.png';
@@ -30,13 +30,6 @@ export default function Sidebar() {
 
   const displayName = (user?.user_metadata?.full_name as string) || user?.email || 'HR User';
   const email = user?.email || '';
-  const initials = displayName
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
   async function handleLogout() {
     try {
@@ -89,7 +82,7 @@ export default function Sidebar() {
       {/* User */}
       <div className="p-3 border-t border-white/10">
         <div className="flex items-center gap-3 px-2 py-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-300 to-teal-500 flex items-center justify-center text-xs font-bold text-white shrink-0">{initials || 'HR'}</div>
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-300 to-teal-500 flex items-center justify-center text-white shrink-0"><UserIcon width={16} height={16} /></div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium text-white truncate">{displayName}</div>
             <div className="text-xs text-blue-200/60 truncate">{email || 'Recruitment'}</div>

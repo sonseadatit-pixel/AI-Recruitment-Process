@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import ScoreRing from '../components/ScoreRing';
 import SkillTag from '../components/SkillTag';
-import { BackIcon, ChatIcon, ChevronRightIcon, InfoIcon, MailIcon, PencilIcon, SparkIcon, StarIcon } from '../components/icons';
+import { BackIcon, ChatIcon, ChevronRightIcon, InfoIcon, MailIcon, PencilIcon, SparkIcon, StarIcon, UserIcon } from '../components/icons';
 import { useCurrentCandidate } from '../context/RecruitmentContext';
 import { fetchSavedInterviewQuestions, updateCandidateEmail } from '../services/api';
 import { formatDate } from '../utils/formatDate';
@@ -98,8 +98,8 @@ export default function CandidateProfile() {
       <Card className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white text-lg font-bold shrink-0">
-              {candidate.name.split(' ').map((n) => n[0]).join('')}
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white shrink-0">
+              <UserIcon width={26} height={26} />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{candidate.name}</h2>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
-import { BackIcon, SparkIcon } from '../components/icons';
+import { BackIcon, SparkIcon, UserIcon } from '../components/icons';
 import { useCurrentCandidate, useRecruitment } from '../context/RecruitmentContext';
 import { generateInterviewSummary, saveInterviewEvaluation } from '../services/api';
 
@@ -94,8 +94,8 @@ export default function InterviewEvaluation() {
       </div>
 
       <Card className="p-4 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white text-sm font-bold shrink-0">
-          {candidate.name.split(' ').map((n) => n[0]).join('')}
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white shrink-0">
+          <UserIcon width={18} height={18} />
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-gray-900">{candidate.name}</p>

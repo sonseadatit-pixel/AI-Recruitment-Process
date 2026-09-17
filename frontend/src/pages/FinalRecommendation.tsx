@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import ScoreRing from '../components/ScoreRing';
-import { BackIcon, InfoIcon, MailIcon, SparkIcon, XIcon } from '../components/icons';
+import { BackIcon, InfoIcon, MailIcon, SparkIcon, UserIcon, XIcon } from '../components/icons';
 import { useCurrentCandidate, useRecruitment } from '../context/RecruitmentContext';
 import { saveDecision, sendOfferEmail, updateCandidateEmail } from '../services/api';
 import { formatDate } from '../utils/formatDate';
@@ -168,8 +168,8 @@ export default function FinalRecommendation() {
       {/* ── Candidate Summary Card ── */}
       <Card className="p-6">
         <div className="flex items-start gap-5">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white text-xl font-bold shrink-0">
-            {candidate.name.split(' ').map((n) => n[0]).join('')}
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white shrink-0">
+            <UserIcon width={28} height={28} />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold text-gray-900">{candidate.name}</h2>

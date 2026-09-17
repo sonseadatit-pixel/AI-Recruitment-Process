@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import { useRecruitment } from '../context/RecruitmentContext';
 import { fetchDashboardStats, fetchPipeline, fetchJobs, fetchCandidates } from '../services/api';
+import { UserIcon } from '../components/icons';
 import { formatDate } from '../utils/formatDate';
+import recruitmentBanner from '../image/recruitmen-banner.jpg';
 import type { DashboardStats, JobPosting, PipelineStage } from '../types';
 
 const isActive = (s: string) => s === 'open' || s === 'Active';
@@ -31,14 +33,14 @@ export default function Dashboard() {
     {
       label: 'Total Jobs',
       value: jobs.length.toString(),
-      change: stats?.changes.jobs ?? 'Live from database',
-      color: 'text-[#1E3A5F]',
-      bg: 'bg-[#1E3A5F]/5',
+      change: stats?.changes.jobs ?? 'Live',
+      color: 'text-teal-400 ',
+      bg: 'bg-teal-400 ',
     },
     {
       label: 'Total Candidates',
       value: candidateCount.toString(),
-      change: stats?.changes.candidates ?? 'Live from database',
+      change: stats?.changes.candidates ?? 'Live',
       color: 'text-violet-600',
       bg: 'bg-violet-50',
     },
@@ -47,6 +49,7 @@ export default function Dashboard() {
           { label: 'AI Screened', value: stats.aiScreened.toString(), change: stats.changes.aiScreened, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Shortlisted', value: stats.shortlisted.toString(), change: stats.changes.shortlisted, color: 'text-teal-600', bg: 'bg-teal-50' },
         ]
+        
       : []),
   ];
 
@@ -56,18 +59,23 @@ export default function Dashboard() {
       <div className="grid grid-cols-4 gap-4">
         {statCards.length > 0 ? (
           statCards.map((s) => (
-            <Card key={s.label} className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{s.label}</p>
-                  <p className={`text-3xl font-bold mt-2 ${s.color}`}>{s.value}</p>
-                  <p className="text-xs text-gray-400 mt-1">{s.change}</p>
+            <Fragment key={s.label}>
+              <Card className="p-4 flex flex-col justify-between w-full h-full">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-m font-medium text-gray-600 uppercase tracking-wide">{s.label}</p>
+                    <p className={`text-4xl font-bold mt-1 ${s.color}`}>{s.value}</p>
+                    
+                  </div>
+                   </div>
+                   <div className="flex justify-end mt-2">
+                  <p className="text-xs bg-blue-400 text-white px-2 rounded-md">{s.change}</p>
                 </div>
-                <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center`}>
-                  <div className={`w-3 h-3 rounded-full ${s.color.replace('text-', 'bg-')}`}></div>
-                </div>
-              </div>
-            </Card>
+              </Card>
+              {s.label === 'Total Candidates' && (
+                <img src={recruitmentBanner} alt="Recruitment banner" className="col-span-2 rounded-lg shadow-sm" />
+              )}
+            </Fragment>
           ))
         ) : (
           <Card className="col-span-4 p-5 text-center text-sm text-gray-400">
@@ -96,8 +104,8 @@ export default function Dashboard() {
                     navigate(`/candidates/${c.id}`);
                   }}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {c.name.split(' ').map((n) => n[0]).join('')}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1E3A5F] to-[#2A4F7C] flex items-center justify-center text-white shrink-0">
+                    <UserIcon width={16} height={16} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>

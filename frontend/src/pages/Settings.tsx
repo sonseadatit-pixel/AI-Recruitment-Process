@@ -124,7 +124,7 @@ export default function Settings() {
               value={weightedSkills}
               onChange={(e) => setWeightedSkills(e.target.value)}
               disabled={loading}
-              placeholder="e.g. leadership, communication, certification, regulatory knowledge"
+              placeholder=""
               className={fieldInput}
             />
           </div>

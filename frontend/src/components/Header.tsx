@@ -108,7 +108,7 @@ export default function Header() {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Notifications"
-            className="relative p-2 rounded-lg hover:bg-gray-50 transition"
+            className="relative p-2 rounded-lg hover:bg-gray-50 transition text-teal-400"
           >
             <BellIcon />
             {notifications.length > 0 && (
