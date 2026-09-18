@@ -128,7 +128,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 const isBullet = line.startsWith('- ') || line.startsWith('• ');
                 if (isAllCapsTitle(line)) {
                   return (
-                    <p key={li} className="whitespace-pre-wrap font-bold text-gray-900">
+                    <p
+                      key={li}
+                      className={`whitespace-pre-wrap font-bold ${isUser ? 'text-white' : 'text-gray-900'}`}
+                    >
                       {line}
                     </p>
                   );
@@ -139,7 +142,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                   <p
                     key={li}
                     className={`whitespace-pre-wrap ${
-                      isSubTitle ? 'font-semibold text-gray-900' : ''
+                      isSubTitle ? `font-semibold ${isUser ? 'text-white' : 'text-gray-900'}` : ''
                     }`}
                   >
                     {line}
@@ -760,7 +763,7 @@ export default function AiAssistant() {
                     }}
                     onPaste={onPasteInput}
                     placeholder="Write a message..."
-                    className="resize-none flex-1 min-h-[40px] max-h-[160px] px-3 py-2.5 text-sm bg-gray-900 text-white placeholder-gray-400 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
+                    className="resize-none flex-1 min-h-[40px] max-h-[160px] px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
                   />
                   <button
                     type="button"
