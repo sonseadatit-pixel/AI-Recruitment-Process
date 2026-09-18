@@ -23,13 +23,14 @@ export function mailgunFrom(senderName) {
  * Send a plain-text email through the Mailgun Messages API.
  * Returns the Mailgun message id on success; throws on any failure.
  */
-export async function sendMail({ to, subject, text, senderName }) {
+export async function sendMail({ to, subject, text, senderName, replyTo }) {
   if (!isMailgunConfigured()) {
     throw new Error('Mailgun is not configured (MAILGUN_API_KEY / MAILGUN_DOMAIN / MAILGUN_FROM missing).');
   }
 
   const form = new FormData();
   form.append('from', mailgunFrom(senderName));
+  if (replyTo) form.append('h:Reply-To', replyTo);
   form.append('to', to);
   form.append('subject', subject);
   form.append('text', text);

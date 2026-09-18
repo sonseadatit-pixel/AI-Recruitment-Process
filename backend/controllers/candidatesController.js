@@ -384,6 +384,7 @@ export const sendOfferEmail = async (req, res, next) => {
       subject,
       text,
       senderName: values.sender_name,
+      replyTo: 'apply@thelearningstyle.online',
     });
 
     const sentAt = new Date().toISOString();
