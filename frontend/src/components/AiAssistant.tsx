@@ -760,7 +760,7 @@ export default function AiAssistant() {
                     }}
                     onPaste={onPasteInput}
                     placeholder="Write a message..."
-                    className="resize-none flex-1 min-h-[40px] max-h-[160px] px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
+                    className="resize-none flex-1 min-h-[40px] max-h-[160px] px-3 py-2.5 text-sm bg-gray-900 text-white placeholder-gray-400 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition"
                   />
                   <button
                     type="button"
